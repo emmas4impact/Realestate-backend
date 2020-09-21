@@ -1,0 +1,30 @@
+{
+  "name": "Realestate-backend",
+  "version": "1.0.0",
+  "description": "A real Estate project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon -r dotenv/config ./server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/emmas4impact/Realestate-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/emmas4impact/Realestate-backend/issues"
+  },
+  "homepage": "https://github.com/emmas4impact/Realestate-backend#readme",
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.10.6",
+    "multer": "^1.4.2"
+  }
+}
