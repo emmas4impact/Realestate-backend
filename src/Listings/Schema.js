@@ -1,5 +1,5 @@
 const { model, Schema } = require("mongoose");
-
+const valid = require("validator");
 
 const ListingSchema = new Schema(
   {
@@ -7,6 +7,18 @@ const ListingSchema = new Schema(
     address: {
       type: String,
       required: true,
+    },
+    region:{
+        type: String,
+        required: true
+    },
+    type:{
+      type: String,
+      required: true  
+    },
+    district:{
+      type: String,
+      required: true  
     },
     postcode: {
       type: String,
@@ -18,7 +30,19 @@ const ListingSchema = new Schema(
       required: true,
     
     }, //VALIDATION
-    descroption: { type: String, required: true },
+    rating: {
+        type: Number,
+        min: [1, "Sorry you can't rate below 1!"],
+        max: [5, "MAximum rating is 5"],
+        validate(value) {
+          
+            if (value < 0) {
+              throw new Error("rate must be a positive number!")
+            }
+          },
+          required: true,
+    },
+    description: { type: String, required: true },
     features: { type: Array, required: true },
     details: { type: Array, required: true },
     image: { type: Buffer, required: true, default: "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg" },
