@@ -20,6 +20,10 @@ const userSchema = new Schema(
       required: true,
       minlength:7  
     },
+    role:{
+        type: String,
+        required: true
+    },
     email: {
       type: String,
       required: true,
