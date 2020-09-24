@@ -46,9 +46,17 @@ const ListingSchema = new Schema(
     features: { type: Array, required: true },
     details: { type: Array, required: true },
     image: { type: Buffer, required: true, default: "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg" },
+    images: {
+        type: Array
+    },
+    category:{
+        type: String,
+        required: true
+    },
    //validaton
    
   },
+  
   { timestamps: true }
 );
 // profileSchema.methods.toJSON = function () {
