@@ -3,6 +3,7 @@ const listEndpoints = require("express-list-endpoints")
 const mongoose = require("mongoose")
 const helmet = require("helmet")
 const cors = require("cors")
+const {join}= require("path")
 const cookieParser = require("cookie-parser")
 const passport = require("passport")
 const listingsRoute = require("./Listings/list")
@@ -19,6 +20,9 @@ const server = express();
 server.use(cors())
 server.use(cookieParser())
 server.use(helmet())
+const staticFolderPath = join(__dirname, "../public")
+server.use(express.static(staticFolderPath))
+console.log(staticFolderPath)
 const port = process.env.PORT || 2330 
 server.use(passport.initialize())
 
