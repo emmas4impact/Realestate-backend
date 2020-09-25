@@ -25,7 +25,7 @@ router.post("/register", async (req, res) => {
       res.send(error.errors);
     }
   });
-router.get("/", authorize, async(req, res, next)=>{
+router.get("/", adminOnlyMiddleware, async(req, res, next)=>{
     try {
         const users = await UserModel.find(req.query)
         res.send({
