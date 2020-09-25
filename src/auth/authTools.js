@@ -31,13 +31,23 @@ const generateJWT = (payload) =>
     )
   )
 
-const verifyJWT = (token) =>
-  new Promise((res, rej) =>
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) rej(err)
-      res(decoded)
-    })
-  )
+const verifyJWT = async (token) =>{
+  console.log("TOKEN FROM VERIFY",token)
+  console.log(process.env.JWT_SECRET)
+    return await new Promise((res, rej) =>
+                             
+    jwt.verify(token.token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err){
+          console.log(err)
+          rej(err) 
+      }
+      
+      console.log("DECODED",decoded)
+      return res(decoded)
+    }) 
+    )
+}
+  
 
 const generateRefreshJWT = (payload) =>
   new Promise((res, rej) =>
