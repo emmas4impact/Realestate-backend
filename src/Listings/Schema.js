@@ -69,7 +69,7 @@ const ListingSchema = new Schema({
       required: true
     },
     image: {
-      type: Buffer,
+      type: String,
       required: true,
       default: "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg",
     },
@@ -118,6 +118,13 @@ const ListingSchema = new Schema({
 
 ListingSchema.pre('save', async function (next) {
   const loc = await geocoder.geocode(this.address)
+  this.location = {
+    type: 'Point',
+    coordinates: [loc[0].longitude, loc[1].latitude],
+    formattedAddress: loc[0].formattedAddress
+  }
+  this.address = undefined
+  next()
   console.log(loc)
 })
 ListingSchema.post("validate", function (error, doc, next) {
