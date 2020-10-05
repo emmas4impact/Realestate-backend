@@ -84,12 +84,13 @@ router.post("/login", async (req, res, next) => {
     } = req.body
     const user = await UserModel.findByCredentials(email, password)
     console.log(user)
-    const token = await authenticate(user)
-    console.log("newly generated token : ", token)
-    res.cookie("accessToken", token)
-    res.send(token)
+    const tokens = await authenticate(user)
+    console.log("newly generated token : ", tokens)
+    res.cookie("accessToken", tokens.token)
+    res.cookie("refreshToken", tokens.refreshToken)
+    res.send("login successfully")
   } catch (error) {
-
+    next(error)
   }
 
 })
