@@ -4,14 +4,23 @@ const UserModel = require("../users/Schema")
 const authenticate = async (user) => {
   try {
     // generate tokens
-    const newAccessToken = await generateJWT({ _id: user._id })
-    console.log("new acces token ",newAccessToken)
-    const newRefreshToken = await generateRefreshJWT({ _id: user._id })
+    const newAccessToken = await generateJWT({
+      _id: user._id
+    })
+    console.log("new acces token ", newAccessToken)
+    const newRefreshToken = await generateRefreshJWT({
+      _id: user._id
+    })
 
-    user.refreshTokens = user.refreshTokens.concat({ token: newRefreshToken })
+    user.refreshTokens = user.refreshTokens.concat({
+      token: newRefreshToken
+    })
     await user.save()
 
-    return { token: newAccessToken, refreshToken: newRefreshToken }
+    return {
+      token: newAccessToken,
+      refreshToken: newRefreshToken
+    }
   } catch (error) {
     console.log(error)
     throw new Error(error)
@@ -22,8 +31,9 @@ const generateJWT = (payload) =>
   new Promise((res, rej) =>
     jwt.sign(
       payload,
-      process.env.JWT_SECRET,
-      { expiresIn: "6m"},
+      process.env.JWT_SECRET, {
+        expiresIn: "6m"
+      },
       (err, token) => {
         if (err) rej(err)
         res(token)
@@ -31,30 +41,31 @@ const generateJWT = (payload) =>
     )
   )
 
-const verifyJWT = async (token) =>{
-  console.log("TOKEN FROM VERIFY",token)
+const verifyJWT = async (token) => {
+  console.log("TOKEN FROM VERIFY", token)
   console.log(process.env.JWT_SECRET)
-    return await new Promise((res, rej) =>
-                             
-    jwt.verify(token.token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err){
-          console.log(err)
-          rej(err) 
+  return await new Promise((res, rej) =>
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        console.log(err)
+        rej(err)
       }
-      
-      console.log("DECODED",decoded)
+
+      console.log("DECODED", decoded)
       return res(decoded)
-    }) 
-    )
+    })
+  )
 }
-  
+
 
 const generateRefreshJWT = (payload) =>
   new Promise((res, rej) =>
     jwt.sign(
       payload,
-      "Hungry?Lion$",
-      { expiresIn: "1 week" },
+      process.env.REFRESH_JWT_SECRET, {
+        expiresIn: "1 week"
+      },
       (err, token) => {
         if (err) rej(err)
         res(token)
@@ -65,7 +76,9 @@ const generateRefreshJWT = (payload) =>
 const refreshToken = async (oldRefreshToken) => {
   const decoded = await verifyRefreshToken(oldRefreshToken)
 
-  const user = await UserModel.findOne({ _id: decoded._id })
+  const user = await UserModel.findOne({
+    _id: decoded._id
+  })
 
   if (!user) {
     throw new Error(`Access is forbidden`)
@@ -80,27 +93,40 @@ const refreshToken = async (oldRefreshToken) => {
   }
 
   // generate tokens
-  const newAccessToken = await generateJWT({ _id: user._id })
-  const newRefreshToken = await generateRefreshJWT({ _id: user._id })
+  const newAccessToken = await generateJWT({
+    _id: user._id
+  })
+  const newRefreshToken = await generateRefreshJWT({
+    _id: user._id
+  })
 
   // save in db
   const newRefreshTokens = user.refreshTokens
     .filter((t) => t.token !== oldRefreshToken)
-    .concat({ token: newRefreshToken })
+    .concat({
+      token: newRefreshToken
+    })
 
   user.refreshTokens = [...newRefreshTokens]
 
   await user.save()
 
-  return { token: newAccessToken, refreshToken: newRefreshToken }
+  return {
+    token: newAccessToken,
+    refreshToken: newRefreshToken
+  }
 }
 
 const verifyRefreshToken = (token) =>
   new Promise((res, rej) =>
-    jwt.verify(token, "Hungry?Lion$", (err, decoded) => {
+    jwt.verify(token, process.env.REFRESH_JWT_SECRET, (err, decoded) => {
       if (err) rej(err)
       res(decoded)
     })
   )
 
-module.exports = { authenticate, verifyJWT, refreshToken }
+module.exports = {
+  authenticate,
+  verifyJWT,
+  refreshToken
+}
