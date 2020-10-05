@@ -4,23 +4,24 @@
   "description": "A real Estate project to solve renting issue in Lagos, Nigeria",
   "main": "index.js",
   "scripts": {
-    "test": "jest --watch --detectOpenHandles",
-    "dev": "nodemon -r dotenv/config ./src/server.js",
-    "start": "node ./src/server.js"
+    "test": "jest --watch --detectOpenHandles --setupFiles dotenv/config",
+    "dev": "nodemon -r dotenv/config ./src/index.js",
+    "start": "node ./src/index.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/emmas4impact/Realestate-backend.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Emmanuel Adedeji",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/emmas4impact/Realestate-backend/issues"
   },
   "homepage": "https://github.com/emmas4impact/Realestate-backend#readme",
   "devDependencies": {
-    "nodemon": "^2.0.4"
+    "nodemon": "^2.0.4",
+    "supertest": "^5.0.0"
   },
   "dependencies": {
     "bcrypt": "^5.0.0",
@@ -41,7 +42,6 @@
     "prettier": "^2.1.2",
     "query-to-mongo": "^0.10.1",
     "strongloop": "^6.0.3",
-    "supertest": "^5.0.0",
     "swagger-ui-express": "^4.1.4",
     "validator": "^13.1.17",
     "yamljs": "^0.3.0"
