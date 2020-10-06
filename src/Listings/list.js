@@ -4,18 +4,26 @@ const ListingModel = require("./Schema");
 const houseRoute = express.Router();
 const multer = require("multer");
 const path = require("path");
+
 const fs = require("fs-extra");
 const upload = multer({});
 const imagePath = path.join(__dirname, "../../public/images/homes");
 console.log(imagePath);
 
-const { adminOnlyMiddleware, authorize } = require("../middlewares/authorize");
+const {
+  adminOnlyMiddleware,
+  authorize
+} = require("../middlewares/authorize");
 
 houseRoute.get("/", async (req, res, next) => {
   try {
-    const allListings = await ListingModel.find(req.query).sort({
-      allListings: 1,
-    });
+    const parsedQuery = q2m(req.query)
+    const allListings = await ListingModel.find(parsedQuery.criteria, parsedQuery.options.fields)
+      .sort(parsedQuery.options.sort)
+      .limit(parsedQuery.options.limit)
+      .skip(parsedQuery.options.skip)
+
+
     res.send({
       data: allListings,
       Total: allListings.length,
@@ -93,19 +101,22 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
         );
         images.push(
           process.env.SERVER_URL +
-            process.env.PORT +
-            "/images/" +
-            req.params.id +
-            e.originalname
+          process.env.PORT +
+          "/images/" +
+          req.params.id +
+          e.originalname
         );
       })
     );
     await Promise.all(
       images.map(async (e) => {
-        const post = await ListingModel.update(
-          { _id: req.params.id },
-          { $push: { images: e } }
-        );
+        const post = await ListingModel.update({
+          _id: req.params.id
+        }, {
+          $push: {
+            images: e
+          }
+        });
       })
     );
     const added = await ListingModel.findById(req.params.id);
@@ -122,6 +133,7 @@ houseRoute.get("/:district", async (req, res, next) => {
     };
     const listingByDistrict = await ListingModel.find(query);
     if (listingByDistrict) {
+      res.status(200).send(listingByDistrict)
     } else {
       res.send(`Location with this adress: ${listingByDistrict} NOT FOUND`);
     }
@@ -180,6 +192,7 @@ houseRoute.put("/:id", authorize, async (req, res, next) => {
       next(error);
     }
   } catch (error) {
+
     next(error);
   }
 });
