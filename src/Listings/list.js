@@ -10,24 +10,36 @@ const upload = multer({});
 const imagePath = path.join(__dirname, "../../public/images/homes");
 console.log(imagePath);
 
-const {
-  adminOnlyMiddleware,
-  authorize
-} = require("../middlewares/authorize");
+const { adminOnlyMiddleware, authorize } = require("../middlewares/authorize");
 
 houseRoute.get("/", async (req, res, next) => {
   try {
-    const parsedQuery = q2m(req.query)
-    const allListings = await ListingModel.find(parsedQuery.criteria, parsedQuery.options.fields)
+    const parsedQuery = q2m(req.query);
+    const allListings = await ListingModel.find(
+      parsedQuery.criteria,
+      parsedQuery.options.fields
+    )
       .sort(parsedQuery.options.sort)
       .limit(parsedQuery.options.limit)
-      .skip(parsedQuery.options.skip)
-
+      .skip(parsedQuery.options.skip);
 
     res.send({
       data: allListings,
       Total: allListings.length,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+houseRoute.get("/:id", async (req, res, next) => {
+  try {
+    const ListingById = await ListingModel.findById(req.params.id);
+    if (ListingById) {
+      res.status(200).send(ListingById);
+    } else {
+      res.send(`No listing Found with ID ${req.params.id}`);
+    }
   } catch (error) {
     next(error);
   }
@@ -101,22 +113,25 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
         );
         images.push(
           process.env.SERVER_URL +
-          process.env.PORT +
-          "/images/" +
-          req.params.id +
-          e.originalname
+            process.env.PORT +
+            "/images/" +
+            req.params.id +
+            e.originalname
         );
       })
     );
     await Promise.all(
       images.map(async (e) => {
-        const post = await ListingModel.update({
-          _id: req.params.id
-        }, {
-          $push: {
-            images: e
+        const post = await ListingModel.update(
+          {
+            _id: req.params.id,
+          },
+          {
+            $push: {
+              images: e,
+            },
           }
-        });
+        );
       })
     );
     const added = await ListingModel.findById(req.params.id);
@@ -133,7 +148,7 @@ houseRoute.get("/:district", async (req, res, next) => {
     };
     const listingByDistrict = await ListingModel.find(query);
     if (listingByDistrict) {
-      res.status(200).send(listingByDistrict)
+      res.status(200).send(listingByDistrict);
     } else {
       res.send(`Location with this adress: ${listingByDistrict} NOT FOUND`);
     }
@@ -192,7 +207,6 @@ houseRoute.put("/:id", authorize, async (req, res, next) => {
       next(error);
     }
   } catch (error) {
-
     next(error);
   }
 });
