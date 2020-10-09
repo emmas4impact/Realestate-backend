@@ -2,6 +2,7 @@ const express = require("express");
 const listEndpoints = require("express-list-endpoints");
 const mongoose = require("mongoose");
 const helmet = require("helmet");
+
 const cors = require("cors");
 const {
     join
@@ -19,7 +20,19 @@ const {
     genericErrorHandler,
 } = require("./errorHandlers/index");
 const server = express();
-server.use(cors());
+const whitelist = ["http://localhost:3000"]
+const corsOptions = {
+    origin: (origin, callback) => {
+        if (whitelist.indexOf(origin) !== -1 || !origin) {
+            callback(null, true)
+        } else {
+            callback(new Error("Not allowed by CORS"))
+        }
+    },
+    credentials: true,
+}
+
+server.use(cors(corsOptions));
 server.use(cookieParser());
 server.use(helmet());
 const staticFolderPath = join(__dirname, "../public");
