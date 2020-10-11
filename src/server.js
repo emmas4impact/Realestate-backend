@@ -2,8 +2,8 @@ const express = require("express");
 const listEndpoints = require("express-list-endpoints");
 const mongoose = require("mongoose");
 const helmet = require("helmet");
-
 const cors = require("cors");
+
 const {
     join
 } = require("path");
@@ -12,6 +12,9 @@ const passport = require("passport");
 const listingsRoute = require("./Listings/list");
 const tenantRoute = require("./Tenants/index");
 const userRoute = require("./users/index");
+
+
+
 
 const {
     notFoundHandler,
