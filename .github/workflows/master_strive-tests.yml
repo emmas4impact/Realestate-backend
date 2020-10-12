@@ -31,5 +31,5 @@ jobs:
       with:
         app-name: 'strive-tests'
         slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_7e117d3907564427b2d6abc389385240 }}
+        publish-profile: ${{ secrets.AzureAppService_PublishProfile_c66e4c46223041fc98ef664f681f9590 }}
         package: .
