@@ -52,7 +52,7 @@ houseRoute.get("/:id", async (req, res, next) => {
 
 houseRoute.post(
   "/:id/upload",
-  authorize,
+
   upload.single("house"),
   async (req, res, next) => {
     try {
@@ -197,7 +197,7 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
         );
         images.push(
           process.env.SERVER_URL +
-          process.env.PORT +
+
           "/images/" +
           req.params.id +
           e.originalname

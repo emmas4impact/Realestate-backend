@@ -37,10 +37,7 @@ const ListingSchema = new Schema({
       type: String,
       required: true,
     },
-    postcode: {
-      type: String,
-      required: true,
-    },
+
     price: {
       type: Number,
       required: true,
@@ -69,7 +66,7 @@ const ListingSchema = new Schema({
       required: true
     },
     image: {
-      type: String,
+      type: Buffer,
       required: true,
       default: "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg",
     },

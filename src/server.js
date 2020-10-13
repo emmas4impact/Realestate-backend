@@ -35,12 +35,13 @@ const corsOptions = {
     credentials: true,
 }
 
-server.use(cors(corsOptions));
+server.use(cors());
 server.use(cookieParser());
 server.use(helmet());
 const staticFolderPath = join(__dirname, "../public");
-server.use(express.static(staticFolderPath));
 console.log(staticFolderPath);
+server.use(express.static(staticFolderPath));
+
 
 server.use(passport.initialize());
 
