@@ -66,7 +66,7 @@ const ListingSchema = new Schema({
       required: true
     },
     image: {
-      type: Buffer,
+      type: String,
       required: true,
       default: "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg",
     },
