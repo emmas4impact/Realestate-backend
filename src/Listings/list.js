@@ -50,32 +50,32 @@ houseRoute.get("/:id", async (req, res, next) => {
   }
 });
 
-// houseRoute.post(
-//   "/:id/upload",
-//   authorize,
-//   upload.single("house"),
-//   async (req, res, next) => {
-//     try {
-//       await fs.writeFile(
-//         path.join(imagePath, `${req.params.id}.png`),
-//         req.file.buffer
-//       );
-//       req.body = {
-//         image: `http://localhost:5000/${req.params.id}.png`,
-//       };
+houseRoute.post(
+  "/:id/upload",
+  authorize,
+  upload.single("house"),
+  async (req, res, next) => {
+    try {
+      await fs.writeFile(
+        path.join(imagePath, `${req.params.id}.png`),
+        req.file.buffer
+      );
+      req.body = {
+        image: `http://localhost:5000/${req.params.id}.png`,
+      };
 
-//       const post = await ListingModel.findByIdAndUpdate(
-//         req.params.id,
-//         req.body
-//       );
-//       if (post) {
-//         res.send("image uploaded");
-//       }
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
+      const post = await ListingModel.findByIdAndUpdate(
+        req.params.id,
+        req.body
+      );
+      if (post) {
+        res.send("image uploaded");
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 houseRoute.post(
   "/uploadMultiple/:id",
   upload.array("houses"),
