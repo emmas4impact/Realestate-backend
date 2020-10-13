@@ -61,7 +61,7 @@ houseRoute.post(
         req.file.buffer
       );
       req.body = {
-        image: `http://localhost:5000/${req.params.id}.png`,
+        image: `${process.env.SERVER_URL}/${req.params.id}.png`,
       };
 
       const post = await ListingModel.findByIdAndUpdate(
