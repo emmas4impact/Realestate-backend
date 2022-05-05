@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken")
-const UserModel = require("../users/Schema")
+import { sign, verify } from "jsonwebtoken"
+import { findOne } from "../users/Schema"
 
 const authenticate = async (user) => {
   try {
@@ -29,7 +29,7 @@ const authenticate = async (user) => {
 
 const generateJWT = (payload) =>
   new Promise((res, rej) =>
-    jwt.sign(
+    sign(
       payload,
       process.env.JWT_SECRET, {
         expiresIn: "6m"
@@ -46,7 +46,7 @@ const verifyJWT = async (token) => {
   console.log(process.env.JWT_SECRET)
   return await new Promise((res, rej) =>
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
         console.log(err)
         rej(err)
@@ -61,7 +61,7 @@ const verifyJWT = async (token) => {
 
 const generateRefreshJWT = (payload) =>
   new Promise((res, rej) =>
-    jwt.sign(
+    sign(
       payload,
       process.env.REFRESH_JWT_SECRET, {
         expiresIn: "1 week"
@@ -76,7 +76,7 @@ const generateRefreshJWT = (payload) =>
 const refreshToken = async (oldRefreshToken) => {
   const decoded = await verifyRefreshToken(oldRefreshToken)
 
-  const user = await UserModel.findOne({
+  const user = await findOne({
     _id: decoded._id
   })
 
@@ -119,13 +119,13 @@ const refreshToken = async (oldRefreshToken) => {
 
 const verifyRefreshToken = (token) =>
   new Promise((res, rej) =>
-    jwt.verify(token, process.env.REFRESH_JWT_SECRET, (err, decoded) => {
+    verify(token, process.env.REFRESH_JWT_SECRET, (err, decoded) => {
       if (err) rej(err)
       res(decoded)
     })
   )
 
-module.exports = {
+export default {
   authenticate,
   verifyJWT,
   refreshToken
