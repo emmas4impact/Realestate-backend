@@ -1,26 +1,23 @@
-const express = require("express");
-const q2m = require("query-to-mongo");
-const ListingModel = require("./Schema");
-const TenantModel = require("../Tenants/Schema")
-const houseRoute = express.Router();
-const multer = require("multer");
-const path = require("path");
-const sgMail = require('@sendgrid/mail')
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-const fs = require("fs-extra");
+import { Router } from "express";
+import q2m from "query-to-mongo";
+import ListingModel, { find, findById, findByIdAndUpdate, update, findByIdAndDelete } from "./Schema";
+import TenantModel from "../Tenants/Schema";
+const houseRoute = Router();
+import multer from "multer";
+import { join } from "path";
+import { setApiKey, send } from '@sendgrid/mail';
+setApiKey(process.env.SENDGRID_API_KEY)
+import { writeFile } from "fs-extra";
 const upload = multer({});
-const imagePath = path.join(__dirname, "../../public/images/homes");
+const imagePath = join(__dirname, "../../public/images/homes");
 console.log(imagePath);
 
-const {
-  adminOnlyMiddleware,
-  authorize
-} = require("../middlewares/authorize");
+import { adminOnlyMiddleware, authorize } from "../middlewares/authorize";
 
 houseRoute.get("/", async (req, res, next) => {
   try {
     const parsedQuery = q2m(req.query);
-    const allListings = await ListingModel.find(
+    const allListings = await find(
         parsedQuery.criteria,
         parsedQuery.options.fields
       )
@@ -39,7 +36,7 @@ houseRoute.get("/", async (req, res, next) => {
 
 houseRoute.get("/:id", async (req, res, next) => {
   try {
-    const ListingById = await ListingModel.findById(req.params.id);
+    const ListingById = await findById(req.params.id);
     if (ListingById) {
       res.status(200).send(ListingById);
     } else {
@@ -56,15 +53,15 @@ houseRoute.post(
   upload.single("house"),
   async (req, res, next) => {
     try {
-      await fs.writeFile(
-        path.join(imagePath, `${req.params.id}.png`),
+      await writeFile(
+        join(imagePath, `${req.params.id}.png`),
         req.file.buffer
       );
       req.body = {
         image: `${process.env.SERVER_URL}/homes/${req.params.id}.png`,
       };
 
-      const post = await ListingModel.findByIdAndUpdate(
+      const post = await findByIdAndUpdate(
         req.params.id,
         req.body
       );
@@ -83,7 +80,7 @@ houseRoute.post(
     try {
       const images = [];
       const arrayOfPromises = req.files.map((file) =>
-        fs.writeFile(path.join(imagePath, file.originalname), file.buffer)
+        writeFile(join(imagePath, file.originalname), file.buffer)
       );
       //await fs.writeFile(path.join(imagePath, `${req.params.id}.png`), req.file.buffer)
       await Promise.all(arrayOfPromises);
@@ -91,7 +88,7 @@ houseRoute.post(
         images: [`http://localhost:5000/images/${req.params.id}.png`],
       };
 
-      const arryOfPost = await ListingModel.findByIdAndUpdate(
+      const arryOfPost = await findByIdAndUpdate(
         req.params.id,
         req.body
       );
@@ -115,7 +112,7 @@ houseRoute.post("/:id/tenants", async (req, res, next) => {
     //res.status(201).send(newTenant);
     console.log(savedTenant)
     if (savedTenant) {
-      const list = await ListingModel.findById(req.params.id)
+      const list = await findById(req.params.id)
       console.log(list)
       console.log(list._id)
       console.log(savedTenant.property)
@@ -155,8 +152,7 @@ houseRoute.post("/:id/tenants", async (req, res, next) => {
              <h5>CEO BRIDGE HOMES, Lagos Nigeria</h5>
           `,
         };
-        sgMail
-          .send(msg)
+        send(msg)
           .then(() => {
             console.log("Email sent");
           })
@@ -188,8 +184,8 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
     const images = [];
     await Promise.all(
       req.files.map(async (e) => {
-        const resolved = await fs.writeFile(
-          path.join(
+        const resolved = await writeFile(
+          join(
             __dirname,
             `../../public/images/${req.params.id + e.originalname}`
           ),
@@ -206,7 +202,7 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
     );
     await Promise.all(
       images.map(async (e) => {
-        const post = await ListingModel.update({
+        const post = await update({
           _id: req.params.id,
         }, {
           $push: {
@@ -215,7 +211,7 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
         });
       })
     );
-    const added = await ListingModel.findById(req.params.id);
+    const added = await findById(req.params.id);
     res.send(added);
   } catch (err) {
     next(err);
@@ -227,7 +223,7 @@ houseRoute.get("/:district", async (req, res, next) => {
     const query = {
       district: req.params.district,
     };
-    const listingByDistrict = await ListingModel.find(query);
+    const listingByDistrict = await find(query);
     if (listingByDistrict) {
       res.status(200).send(listingByDistrict);
     } else {
@@ -243,7 +239,7 @@ houseRoute.get("/price/range", async (req, res, next) => {
     const query = {
       price: req.params.price,
     };
-    const listingByprice = await ListingModel.find({
+    const listingByprice = await find({
       price: {
         $gte: Number(req.query.price),
         $lt: Number(req.query.price2),
@@ -276,7 +272,7 @@ houseRoute.post("/", async (req, res, next) => {
 
 houseRoute.put("/:id", authorize, async (req, res, next) => {
   try {
-    const updateListings = await ListingModel.findByIdAndUpdate(
+    const updateListings = await findByIdAndUpdate(
       req.params.id,
       req.body
     );
@@ -294,7 +290,7 @@ houseRoute.put("/:id", authorize, async (req, res, next) => {
 
 houseRoute.delete("/:id", authorize, async (req, res, next) => {
   try {
-    const deleteListings = await ListingModel.findByIdAndDelete(req.params.id);
+    const deleteListings = await findByIdAndDelete(req.params.id);
     if (deleteListings) {
       res.status(202).send("record deleted succesfully");
     } else {
@@ -305,4 +301,4 @@ houseRoute.delete("/:id", authorize, async (req, res, next) => {
   }
 });
 
-module.exports = houseRoute;
+export default houseRoute;
