@@ -1,8 +1,6 @@
-const jwt = require("jsonwebtoken")
-const UserModel = require("../users/Schema")
-const {
-  verifyJWT
-} = require("../auth/authTools")
+import jwt from "jsonwebtoken"
+import { findOne } from "../users/Schema"
+import { verifyJWT } from "../auth/authTools"
 
 const authorize = async (req, res, next) => {
   //console.log("COOKIES:", req.cookies)
@@ -10,7 +8,7 @@ const authorize = async (req, res, next) => {
     const token = req.cookies.accessToken
     console.log(req.cookies)
     const decoded = await verifyJWT(token)
-    const user = await UserModel.findOne({
+    const user = await findOne({
       _id: decoded._id,
     })
     //console.log(user)
@@ -39,7 +37,7 @@ const adminOnlyMiddleware = async (req, res, next) => {
   }
 }
 
-module.exports = {
+export default {
   authorize,
   adminOnlyMiddleware
 }
