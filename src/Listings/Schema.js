@@ -1,9 +1,6 @@
-const {
-  model,
-  Schema
-} = require("mongoose");
-const valid = require("validator");
-const geocoder = require("../utils/geocoder")
+import { model, Schema } from "mongoose";
+import valid from "validator";
+import { geocode } from "../utils/geocoder";
 const ListingSchema = new Schema({
     title: {
       type: String,
@@ -114,7 +111,7 @@ const ListingSchema = new Schema({
 // }) ;
 
 ListingSchema.pre('save', async function (next) {
-  const loc = await geocoder.geocode(this.address)
+  const loc = await geocode(this.address)
   this.location = {
     type: 'Point',
     coordinates: [loc[0].longitude, loc[1].latitude],
@@ -143,4 +140,4 @@ ListingSchema.post("save", function (error, doc, next) {
 });
 const ListingModel = model("house", ListingSchema);
 
-module.exports = ListingModel;
+export default ListingModel;
