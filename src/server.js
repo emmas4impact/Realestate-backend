@@ -11,7 +11,7 @@ const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const listingsRoute = require("./Listings/list");
 const tenantRoute = require("./Tenants/index");
-const userRoute = require("./users/index");
+const userRoute = require("./users/index").default;
 
 
 
@@ -21,7 +21,7 @@ const {
     forbiddenHandler,
     badRequestHandler,
     genericErrorHandler,
-} = require("./errorHandlers/index");
+} = require("./errorHandlers/index").default;
 const server = express();
 const whitelist = ["http://localhost:3000"]
 const corsOptions = {
