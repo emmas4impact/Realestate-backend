@@ -24,7 +24,7 @@ const genericErrorHandler = (err,req,res,next)=>{
         res.status(err.httpStatusCode || 500).send(err.message)
     }
 }
-module.exports = {
+export default {
     badRequestHandler,
     notFoundHandler,
     forbiddenHandler,
