@@ -1,6 +1,6 @@
-const server = require("./server");
+import { listen } from "./server";
 const port = process.env.PORT;
 console.log(port)
-server.listen(port, () => {
+listen(port, () => {
     console.log(`server is running on ${port}`);
 });
