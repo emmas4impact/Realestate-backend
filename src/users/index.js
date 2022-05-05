@@ -1,20 +1,14 @@
-const express = require("express")
-const UserModel = require("./Schema")
-const {
-  authenticate,
-  refreshToken
-} = require("../auth/authTools")
-const {
-  authorize,
-  adminOnlyMiddleware
-} = require("../middlewares/authorize")
-const router = express.Router()
-const bcrypt = require("bcrypt");
-const passport = require("passport");
+import { Router } from "express"
+import UserModel, { find, findById, findOneAndUpdate, findByCredentials } from "./Schema"
+import { authenticate, refreshToken } from "../auth/authTools"
+import { authorize, adminOnlyMiddleware } from "../middlewares/authorize"
+const router = Router()
+import bcrypt from "bcrypt"
+import passport from "passport"
 
 router.post("/register", async (req, res) => {
   try {
-    const checkEmail = await UserModel.find({
+    const checkEmail = await find({
       email: req.body.email
     });
     console.log(checkEmail);
@@ -33,7 +27,7 @@ router.post("/register", async (req, res) => {
 });
 router.get("/", adminOnlyMiddleware, async (req, res, next) => {
   try {
-    const users = await UserModel.find(req.query)
+    const users = await find(req.query)
     res.send({
       data: users,
       total: users.length
@@ -53,7 +47,7 @@ router.get("/me", authorize, async (req, res, next) => {
 
 router.get("/:id", authorize, async (req, res, next) => {
   try {
-    const users = await UserModel.findById(req.params.id)
+    const users = await findById(req.params.id)
     res.send(users)
   } catch (error) {
     console.log(error)
@@ -64,7 +58,7 @@ router.get("/:id", authorize, async (req, res, next) => {
 
 router.put("/:name", authorize, async (req, res, next) => {
   try {
-    const updatedUser = await UserModel.findOneAndUpdate(req.params.name, {
+    const updatedUser = await findOneAndUpdate(req.params.name, {
       ...req.body
     })
 
@@ -82,7 +76,7 @@ router.post("/login", async (req, res, next) => {
       email,
       password
     } = req.body
-    const user = await UserModel.findByCredentials(email, password)
+    const user = await findByCredentials(email, password)
     console.log(user)
     const tokens = await authenticate(user)
     console.log("newly generated token : ", tokens)
@@ -135,4 +129,4 @@ router.post("/refreshToken", async (req, res, next) => {
   }
 })
 
-module.exports = router;
+export default router;
