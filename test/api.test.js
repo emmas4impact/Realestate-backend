@@ -3,19 +3,15 @@ const { response } = require("../src/server");
 const server = require("../src/server");
 
 describe("Test routes", () => {
-  test("Should get list of listings", () => {
-    return request(server)
-      .get("/listings")
-      .then((response) => {
-        expect(response.statusCode).toBe(200);
-      });
+  test("Should get list of listings", async () => {
+    const response = await request(server)
+      .get("/listings");
+    expect(response.statusCode).toBe(200);
   });
-  test("Should return list of tenants ", () => {
-    return request(server)
-      .get("/tenants")
-      .then((response) => {
-        expect(response.statusCode).toBe(200);
-      });
+  test("Should return list of tenants ", async () => {
+    const response = await request(server)
+      .get("/tenants");
+    expect(response.statusCode).toBe(200);
   });
   test("Should return loggedin Users", (done) => {
     return request(server)
