@@ -16,7 +16,7 @@ describe("Test routes", () => {
   test("Should return loggedin Users", (done) => {
     return request(server)
       .post("/users/login")
-      .send({ email: "emmas4impact@yahoo.com", password: "london123" })
+      .send({ email: "emma@yahoo.com", password: "123" })
       .expect(200)
       .end((err, response) => {
         console.log(response);
