@@ -1,10 +1,11 @@
 import { model, Schema } from "mongoose";
 import valid from "validator";
-import { geocode } from "../utils/geocoder";
-const ListingSchema = new Schema({
+import geocoder from "../utils/geocoder.mjs";
+const ListingSchema = new Schema(
+  {
     title: {
       type: String,
-      required: true
+      required: true,
     },
     address: {
       type: String,
@@ -22,7 +23,6 @@ const ListingSchema = new Schema({
       type: {
         type: String,
         enum: ["Point"],
-
       },
       coordinates: {
         type: [Number],
@@ -52,20 +52,21 @@ const ListingSchema = new Schema({
     },
     description: {
       type: String,
-      required: true
+      required: true,
     },
     features: {
       type: Array,
-      required: true
+      required: true,
     },
     details: {
       type: Array,
-      required: true
+      required: true,
     },
     image: {
       type: String,
       required: true,
-      default: "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg",
+      default:
+        "https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg",
     },
     images: {
       type: Array,
@@ -78,7 +79,7 @@ const ListingSchema = new Schema({
   },
 
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 // profileSchema.methods.toJSON = function () {
@@ -110,17 +111,17 @@ const ListingSchema = new Schema({
 //   next() ;
 // }) ;
 
-ListingSchema.pre('save', async function (next) {
-  const loc = await geocode(this.address)
+ListingSchema.pre("save", async function (next) {
+  const loc = await geocode(this.address);
   this.location = {
-    type: 'Point',
+    type: "Point",
     coordinates: [loc[0].longitude, loc[1].latitude],
-    formattedAddress: loc[0].formattedAddress
-  }
-  this.address = undefined
-  next()
-  console.log(loc)
-})
+    formattedAddress: loc[0].formattedAddress,
+  };
+  this.address = undefined;
+  next();
+  console.log(loc);
+});
 ListingSchema.post("validate", function (error, doc, next) {
   if (error) {
     error.httpStatusCode = 400;

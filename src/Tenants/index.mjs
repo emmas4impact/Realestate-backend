@@ -1,14 +1,13 @@
 import { Router } from "express";
-import TenantModel, { find, findById, findByIdAndUpdate, findByIdAndDelete } from "./Schema";
-import ListingModel from "../Listings/Schema";
-import { setApiKey, send } from "@sendgrid/mail";
-setApiKey(process.env.SENDGRID_API_KEY);
-const userRoute = Router();
-import { adminOnlyMiddleware, authorize } from "../middlewares/authorize";
+import TenantModel from "./Schema.mjs";
+import sgMail from "@sendgrid/mail";
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const tenantRoute = Router();
+//import { adminOnlyMiddleware, authorize } from "../middlewares/authorize";
 
-userRoute.get("/", authorize, async (req, res, next) => {
+tenantRoute.get("/", async (req, res, next) => {
   try {
-    const getTenant = await find(req.query).populate("house");
+    const getTenant = await TenantModel.find(req.query).populate("house");
     res.send({
       data: getTenant,
       Total: getTenant.length,
@@ -17,16 +16,16 @@ userRoute.get("/", authorize, async (req, res, next) => {
     next(error);
   }
 });
-userRoute.get("/:id", async (req, res, next) => {
+tenantRoute.get("/:id", async (req, res, next) => {
   try {
-    const tenantById = await findById(req.params.id);
+    const tenantById = await TenantModel.findById(req.params.id);
     if (tenantById) res.status(200).send(tenantById);
     else res.send(`No Tenant found with such Id: ${req.params.id}`);
   } catch (error) {
     next(error);
   }
 });
-userRoute.post("/", async (req, res, next) => {
+tenantRoute.post("/", async (req, res, next) => {
   try {
     const newTenant = new TenantModel(req.body);
     await newTenant.save();
@@ -49,9 +48,9 @@ userRoute.post("/", async (req, res, next) => {
     next(error);
   }
 });
-userRoute.put("/:id", async (req, res, next) => {
+tenantRoute.put("/:id", async (req, res, next) => {
   try {
-    const updateTenant = await findByIdAndUpdate(
+    const updateTenant = await TenantModel.findByIdAndUpdate(
       req.params.id,
       req.body
     );
@@ -66,9 +65,9 @@ userRoute.put("/:id", async (req, res, next) => {
     next(error);
   }
 });
-userRoute.delete("/:id", async (req, res, next) => {
+tenantRoute.delete("/:id", async (req, res, next) => {
   try {
-    const deletedTenant = await findByIdAndDelete(req.params.id);
+    const deletedTenant = await TenantModel.findByIdAndDelete(req.params.id);
     if (deletedTenant) {
       res.send("deleted Successfully");
     } else {
@@ -81,4 +80,4 @@ userRoute.delete("/:id", async (req, res, next) => {
   }
 });
 
-export default userRoute;
+export default tenantRoute;

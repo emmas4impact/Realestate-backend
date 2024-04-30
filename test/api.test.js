@@ -1,16 +1,14 @@
 const request = require("supertest");
-const { response } = require("../src/server");
-const server = require("../src/server");
+const { response } = require("../src/server.mjs").default.default;
+const server = require("../src/server.mjs").default.default;
 
 describe("Test routes", () => {
   test("Should get list of listings", async () => {
-    const response = await request(server)
-      .get("/listings");
+    const response = await request(server).get("/listings");
     expect(response.statusCode).toBe(200);
   });
   test("Should return list of tenants ", async () => {
-    const response = await request(server)
-      .get("/tenants");
+    const response = await request(server).get("/tenants");
     expect(response.statusCode).toBe(200);
   });
   test("Should return loggedin Users", (done) => {

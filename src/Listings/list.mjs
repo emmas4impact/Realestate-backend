@@ -1,26 +1,38 @@
 import { Router } from "express";
 import q2m from "query-to-mongo";
-import ListingModel, { find, findById, findByIdAndUpdate, update, findByIdAndDelete } from "./Schema";
-import TenantModel from "../Tenants/Schema";
+import ListingModel from "./Schema.mjs";
+import TenantModel from "../Tenants/Schema.mjs";
 const houseRoute = Router();
 import multer from "multer";
 import { join } from "path";
-import { setApiKey, send } from '@sendgrid/mail';
-setApiKey(process.env.SENDGRID_API_KEY)
-import { writeFile } from "fs-extra";
+import fs from "fs-extra"; // Import 'fs' directly for 'writeFileSync'
+const { writeFile } = fs; // Using writeFileSync
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const upload = multer({});
 const imagePath = join(__dirname, "../../public/images/homes");
-console.log(imagePath);
 
-import { adminOnlyMiddleware, authorize } from "../middlewares/authorize";
+import sgMail from "@sendgrid/mail";
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// import pkgs from "fs-extra";
+// const { writeFile } = pkgs;
+// const upload = multer({});
+// const imagePath = join(__dirname, "../../public/images/homes");
+// console.log(imagePath);
+
+//import { adminOnlyMiddleware, authorize } from "../middlewares/authorize.mjs";
 
 houseRoute.get("/", async (req, res, next) => {
   try {
     const parsedQuery = q2m(req.query);
-    const allListings = await find(
-        parsedQuery.criteria,
-        parsedQuery.options.fields
-      )
+    const allListings = await ListingModel.find(
+      parsedQuery.criteria,
+      parsedQuery.options.fields
+    )
       .sort(parsedQuery.options.sort)
       .limit(parsedQuery.options.limit)
       .skip(parsedQuery.options.skip);
@@ -36,7 +48,7 @@ houseRoute.get("/", async (req, res, next) => {
 
 houseRoute.get("/:id", async (req, res, next) => {
   try {
-    const ListingById = await findById(req.params.id);
+    const ListingById = await ListingModel.findById(req.params.id);
     if (ListingById) {
       res.status(200).send(ListingById);
     } else {
@@ -53,15 +65,12 @@ houseRoute.post(
   upload.single("house"),
   async (req, res, next) => {
     try {
-      await writeFile(
-        join(imagePath, `${req.params.id}.png`),
-        req.file.buffer
-      );
+      await writeFile(join(imagePath, `${req.params.id}.png`), req.file.buffer);
       req.body = {
         image: `${process.env.SERVER_URL}/homes/${req.params.id}.png`,
       };
 
-      const post = await findByIdAndUpdate(
+      const post = await ListingModel.findByIdAndUpdate(
         req.params.id,
         req.body
       );
@@ -88,7 +97,7 @@ houseRoute.post(
         images: [`http://localhost:5000/images/${req.params.id}.png`],
       };
 
-      const arryOfPost = await findByIdAndUpdate(
+      const arryOfPost = await ListingModel.findByIdAndUpdate(
         req.params.id,
         req.body
       );
@@ -101,25 +110,23 @@ houseRoute.post(
   }
 );
 houseRoute.post("/:id/tenants", async (req, res, next) => {
-
   try {
-
     const newTenant = new TenantModel({
       ...req.body,
-      property: req.params.id
+      property: req.params.id,
     });
     const savedTenant = await newTenant.save();
     //res.status(201).send(newTenant);
-    console.log(savedTenant)
+    console.log(savedTenant);
     if (savedTenant) {
-      const list = await findById(req.params.id)
-      console.log(list)
-      console.log(list._id)
-      console.log(savedTenant.property)
-      const verfiedId = String(list._id) === String(savedTenant.property)
-      console.log(verfiedId)
+      const list = await ListingModel.findById(req.params.id);
+      console.log(list);
+      console.log(list._id);
+      console.log(savedTenant.property);
+      const verfiedId = String(list._id) === String(savedTenant.property);
+      console.log(verfiedId);
       if (verfiedId) {
-        console.log(list.description)
+        console.log(list.description);
         const msg = {
           to: savedTenant.email, // Change to your recipient
           from: "bridgehomes.realestate@gmail.com", // Change to your verified sender
@@ -159,24 +166,19 @@ houseRoute.post("/:id/tenants", async (req, res, next) => {
           .catch((error) => {
             console.error(error);
           });
-        res.send("email Sent")
-
+        res.send("email Sent");
       } else {
-        res.send("check conditios")
+        res.send("check conditios");
       }
-
-
     } else {
       const error = new Error(`Experience with id ${req.params.id} not found`);
       error.httpStatusCode = 404;
       next(error);
     }
-
   } catch (error) {
     next(error);
   }
-})
-
+});
 
 houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
   try {
@@ -192,23 +194,22 @@ houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
           e.buffer
         );
         images.push(
-          process.env.SERVER_URL +
-
-          "/images/" +
-          req.params.id +
-          e.originalname
+          process.env.SERVER_URL + "/images/" + req.params.id + e.originalname
         );
       })
     );
     await Promise.all(
       images.map(async (e) => {
-        const post = await update({
-          _id: req.params.id,
-        }, {
-          $push: {
-            images: e,
+        const post = await update(
+          {
+            _id: req.params.id,
           },
-        });
+          {
+            $push: {
+              images: e,
+            },
+          }
+        );
       })
     );
     const added = await findById(req.params.id);
@@ -223,7 +224,7 @@ houseRoute.get("/:district", async (req, res, next) => {
     const query = {
       district: req.params.district,
     };
-    const listingByDistrict = await find(query);
+    const listingByDistrict = await ListingModel.find(query);
     if (listingByDistrict) {
       res.status(200).send(listingByDistrict);
     } else {
@@ -239,7 +240,7 @@ houseRoute.get("/price/range", async (req, res, next) => {
     const query = {
       price: req.params.price,
     };
-    const listingByprice = await find({
+    const listingByprice = await ListingModel.find({
       price: {
         $gte: Number(req.query.price),
         $lt: Number(req.query.price2),
@@ -270,9 +271,9 @@ houseRoute.post("/", async (req, res, next) => {
   }
 });
 
-houseRoute.put("/:id", authorize, async (req, res, next) => {
+houseRoute.put("/:id", async (req, res, next) => {
   try {
-    const updateListings = await findByIdAndUpdate(
+    const updateListings = await ListingModel.findByIdAndUpdate(
       req.params.id,
       req.body
     );
@@ -288,9 +289,9 @@ houseRoute.put("/:id", authorize, async (req, res, next) => {
   }
 });
 
-houseRoute.delete("/:id", authorize, async (req, res, next) => {
+houseRoute.delete("/:id", async (req, res, next) => {
   try {
-    const deleteListings = await findByIdAndDelete(req.params.id);
+    const deleteListings = await ListingModel.findByIdAndDelete(req.params.id);
     if (deleteListings) {
       res.status(202).send("record deleted succesfully");
     } else {

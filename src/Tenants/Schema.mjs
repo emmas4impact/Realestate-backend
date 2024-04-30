@@ -1,13 +1,11 @@
-const {
-  model,
-  Schema
-} = require("mongoose");
-const valid = require("validator");
+import { model, Schema } from "mongoose";
+import valid from "validator";
 
-const tenantSchema = new Schema({
+const tenantSchema = new Schema(
+  {
     name: {
       type: String,
-      required: true
+      required: true,
     },
     surname: {
       type: String,
@@ -15,27 +13,25 @@ const tenantSchema = new Schema({
     },
     Employer: {
       type: String,
-      required: true
+      required: true,
     },
 
     phone: {
       type: String,
-      required: true
+      required: true,
     },
     email: {
       type: String,
       required: true,
-
     },
     property: {
       type: Schema.Types.ObjectId,
-      ref: 'house',
-
+      ref: "house",
     }, //VALIDATION
   },
 
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
@@ -58,4 +54,4 @@ tenantSchema.post("save", function (error, doc, next) {
 });
 const TenantModel = model("rent", tenantSchema);
 
-module.exports = TenantModel;
+export default TenantModel;
