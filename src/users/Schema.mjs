@@ -1,15 +1,12 @@
-const {
-  model,
-  Schema
-} = require("mongoose");
-const valid = require("validator");
-const bcrypt = require("bcrypt");
+import { model, Schema } from "mongoose";
+import valid from "validator";
+import { compare, hash } from "bcrypt";
 
-
-const userSchema = new Schema({
+const userSchema = new Schema(
+  {
     name: {
       type: String,
-      required: true
+      required: true,
     },
     surname: {
       type: String,
@@ -18,34 +15,33 @@ const userSchema = new Schema({
     username: {
       type: String,
       required: true,
-
     },
 
     password: {
       type: String,
       required: true,
-      minlength: 7
+      minlength: 7,
     },
     role: {
       type: String,
-      required: true
+      required: true,
     },
     email: {
       type: String,
       required: true,
-
     },
-    refreshTokens: [{
-      token: {
-        type: String,
-        required: true,
+    refreshTokens: [
+      {
+        token: {
+          type: String,
+          required: true,
+        },
       },
-    }, ],
-
+    ],
   },
 
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
@@ -68,55 +64,55 @@ userSchema.post("save", function (error, doc, next) {
 });
 
 userSchema.methods.toJSON = function () {
-  const user = this
-  const userObject = user.toObject()
+  const user = this;
+  const userObject = user.toObject();
 
-  delete userObject.password
-  delete userObject.__v
+  delete userObject.password;
+  delete userObject.__v;
 
-  return userObject
-}
+  return userObject;
+};
 userSchema.statics.findByCredentials = async (email, password) => {
   const user = await UserModel.findOne({
-    email
-  })
-  console.log(user)
-  const isMatch = await bcrypt.compare(password, user.password)
+    email,
+  });
+  console.log(user);
+  const isMatch = await compare(password, user.password);
 
   if (!isMatch) {
-    const err = new Error("Unable to login")
-    err.httpStatusCode = 401
-    throw err
+    const err = new Error("Unable to login");
+    err.httpStatusCode = 401;
+    throw err;
   }
 
-  return user
-}
+  return user;
+};
 userSchema.pre("save", async function (next) {
-  const user = this
+  const user = this;
 
   if (user.isModified("password")) {
-    user.password = await bcrypt.hash(user.password, 8)
+    user.password = await hash(user.password, 8);
   }
 
-  next()
-})
+  next();
+});
 
 userSchema.post("validate", function (error, doc, next) {
   if (error) {
-    error.httpStatusCode = 400
-    next(error)
+    error.httpStatusCode = 400;
+    next(error);
   } else {
-    next()
+    next();
   }
-})
+});
 userSchema.post("save", function (error, doc, next) {
   if (error.name === "MongoError" && error.code === 11000) {
-    error.httpStatusCode = 400
-    next(error)
+    error.httpStatusCode = 400;
+    next(error);
   } else {
-    next()
+    next();
   }
-})
+});
 const UserModel = model("user", userSchema);
 
-module.exports = UserModel;
+export default UserModel;
