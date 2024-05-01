@@ -5,7 +5,7 @@
   "description": "A real Estate project to solve renting issue in Lagos, Nigeria",
   "main": "index.mjs",
   "scripts": {
-    "test": "jest --watch --detectOpenHandles --setupFiles dotenv/config",
+    "test": "jest --watch --detectOpenHandles --config",
     "dev": "nodemon -r dotenv/config ./src/index.mjs",
     "start": "node ./src/index.mjs"
   },
@@ -29,6 +29,7 @@
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
+    "docker": "^1.0.0",
     "dotenv": "^8.2.0",
     "express": "^4.19.2",
     "express-list-endpoints": "^7.1.0",

@@ -1,6 +1,6 @@
-const request = require("supertest");
-const { response } = require("../src/server.mjs").default.default;
-const server = require("../src/server.mjs").default.default;
+import request from "supertest";
+///const { response } = require("../src/server.mjs").default.default;
+import server from "../src/server.mjs";
 
 describe("Test routes", () => {
   test("Should get list of listings", async () => {
