@@ -1,6 +1,8 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import listEndpoints from "express-list-endpoints";
-import { connect } from "mongoose";
+import mongoose from "mongoose";
 import helmet from "helmet";
 import cors from "cors";
 
@@ -50,10 +52,12 @@ server.use(errorHandlers.forbiddenHandler);
 server.use(errorHandlers.genericErrorHandler);
 
 console.log(listEndpoints(server));
-connect(process.env.MONGODB_CONNECTION, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+
+mongoose
+  .connect(process.env.MONGODB_CONNECTION, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("Mongo Db connected"))
   .catch((err) => console.log(err));
 
