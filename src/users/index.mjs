@@ -1,7 +1,8 @@
 import express from "express";
 const userRouter = express.Router();
 import UserModel from "./Schema.mjs";
-import authTools from "../auth/authTools.mjs";
+import authTools from "../middlewares/auth/authTools.mjs";
+const { authenticate } = authTools;
 //import { authorize, adminOnlyMiddleware } from "../middlewares/authorize";
 
 userRouter.post("/register", async (req, res) => {

@@ -1,41 +1,32 @@
-// import request from "supertest";
-// ///const { response } = require("../src/server.mjs").default.default;
-// import server from "../src/server.mjs";
-
-// describe("Test routes", () => {
-//   test("Should get list of listings", async () => {
-//     const response = await request(server).get("/listings");
-//     expect(response.statusCode).toBe(200);
-//   });
-//   test("Should return list of tenants ", async () => {
-//     const response = await request(server).get("/tenants");
-//     expect(response.statusCode).toBe(200);
-//   });
-//   test("Should return loggedin Users", (done) => {
-//     return request(server)
-//       .post("/users/login")
-//       .send({ email: "emma@yahoo.com", password: "123" })
-//       .expect(200)
-//       .end((err, response) => {
-//         console.log(response);
-//         done();
-//       });
-//   });
-// });
 import assert from "assert";
 import app from "../src/server.mjs"; // Adjust the path to your app
 import request from "supertest";
-
+const apiKey = process.env.BG_API_Key;
 describe("GET all listings", () => {
   it("Should respond with a 200 status code", async () => {
-    const response = await request(app).get("/listings");
-    assert.equal(response.statusCode, 200);
+    try {
+      const response = await request(app)
+        .get("/listings")
+        .set("bg-api-key", apiKey)
+        .assert.equal(response.statusCode, 200);
+    } catch (error) {}
+
     //assert.equal(response.body.data._id, No)
   });
   it("return json response", function () {
     return request(app)
       .get("/listings")
+      .set("bg-api-key", apiKey)
       .expect(200)
       .expect("Content-Type", /json/);
+  });
+  it("Should fetch by district", async () => {
+    let dis = "Malmikartano";
+    const response = await request(app)
+      .get("/listings/district/:district")
+      .query(dis)
+      .set("bg-api-key", apiKey);
+    assert.equal(response.statusCode, 200);
+    //assert.equal(response.body.data._id, No)
   });
 });

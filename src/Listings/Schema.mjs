@@ -85,16 +85,14 @@ const ListingSchema = new Schema(
 ListingSchema.pre("save", async function (next) {
   const loc = await geocoder.geocode(this.address);
 
-  console.log("I am here", loc);
   this.location = {
     type: "Point",
     coordinates: [loc[0].longitude, loc[0].latitude],
     formattedAddress: loc[0].formattedAddress,
   };
-  console.log(loc);
+
   this.address = undefined;
   next();
-  console.log(loc);
 });
 ListingSchema.post("validate", function (error, doc, next) {
   if (error) {

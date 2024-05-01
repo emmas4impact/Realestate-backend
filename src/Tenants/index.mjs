@@ -1,11 +1,13 @@
 import { Router } from "express";
 import TenantModel from "./Schema.mjs";
 import sgMail from "@sendgrid/mail";
+import authTools from "../middlewares/auth/authTools.mjs";
+const { authenticate } = authTools;
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 const tenantRoute = Router();
 //import { adminOnlyMiddleware, authorize } from "../middlewares/authorize";
 
-tenantRoute.get("/", async (req, res, next) => {
+tenantRoute.get("/", authenticate, async (req, res, next) => {
   try {
     const getTenant = await TenantModel.find(req.query).populate("house");
     res.send({
@@ -16,7 +18,7 @@ tenantRoute.get("/", async (req, res, next) => {
     next(error);
   }
 });
-tenantRoute.get("/:id", async (req, res, next) => {
+tenantRoute.get("/:id", authenticate, async (req, res, next) => {
   try {
     const tenantById = await TenantModel.findById(req.params.id);
     if (tenantById) res.status(200).send(tenantById);
@@ -25,7 +27,7 @@ tenantRoute.get("/:id", async (req, res, next) => {
     next(error);
   }
 });
-tenantRoute.post("/", async (req, res, next) => {
+tenantRoute.post("/", authenticate, async (req, res, next) => {
   try {
     const newTenant = new TenantModel(req.body);
     await newTenant.save();
@@ -48,7 +50,7 @@ tenantRoute.post("/", async (req, res, next) => {
     next(error);
   }
 });
-tenantRoute.put("/:id", async (req, res, next) => {
+tenantRoute.put("/:id", authenticate, async (req, res, next) => {
   try {
     const updateTenant = await TenantModel.findByIdAndUpdate(
       req.params.id,
@@ -65,7 +67,7 @@ tenantRoute.put("/:id", async (req, res, next) => {
     next(error);
   }
 });
-tenantRoute.delete("/:id", async (req, res, next) => {
+tenantRoute.delete("/:id", authenticate, async (req, res, next) => {
   try {
     const deletedTenant = await TenantModel.findByIdAndDelete(req.params.id);
     if (deletedTenant) {
