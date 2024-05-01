@@ -1,5 +1,4 @@
 import { model, Schema } from "mongoose";
-import valid from "validator";
 import geocoder from "../utils/geocoder.mjs";
 const ListingSchema = new Schema(
   {
@@ -82,42 +81,17 @@ const ListingSchema = new Schema(
     timestamps: true,
   }
 );
-// profileSchema.methods.toJSON = function () {
-//   const user = this
-//   const userObject = user.toObject()
-
-//   delete userObject.password
-//   delete userObject.__v
-
-//   return userObject
-// }
-
-// profileSchema.statics.findByCredentials = async (email, password) => {
-//   const user = await profileModel.findOne({ email }) ;
-//   const isMatch = await bcrypt.compare(password, user.password) ;
-//   if (!isMatch) {
-//     const err = new Error("Unable to login") ;
-//     err.httpStatusCode = 401 ;
-//     throw err;
-//   }
-//   return user ;
-// } ;
-
-// profileSchema.pre("save", async function (next) {
-//   const user = this
-//   if (user.isModified("password")) {
-//     user.password = await bcrypt.hash(user.password, 8) ;
-//   }
-//   next() ;
-// }) ;
 
 ListingSchema.pre("save", async function (next) {
-  const loc = await geocode(this.address);
+  const loc = await geocoder.geocode(this.address);
+
+  console.log("I am here", loc);
   this.location = {
     type: "Point",
-    coordinates: [loc[0].longitude, loc[1].latitude],
+    coordinates: [loc[0].longitude, loc[0].latitude],
     formattedAddress: loc[0].formattedAddress,
   };
+  console.log(loc);
   this.address = undefined;
   next();
   console.log(loc);

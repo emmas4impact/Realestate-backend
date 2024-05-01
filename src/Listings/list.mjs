@@ -265,7 +265,7 @@ houseRoute.post("/", async (req, res, next) => {
   try {
     const newListing = new ListingModel(req.body);
     const addhouse = await newListing.save();
-    res.status(201).send(addhouse._id);
+    res.status(201).send({ data: addhouse });
   } catch (error) {
     next(error);
   }
