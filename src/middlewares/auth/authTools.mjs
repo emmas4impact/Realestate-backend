@@ -1,30 +1,42 @@
-import pkg from "jsonwebtoken";
-const { sign, verify } = pkg;
-import UserModel from "../users/Schema.mjs";
-const authenticate = async (user) => {
-  try {
-    // generate tokens
-    const newAccessToken = await generateJWT({
-      _id: user._id,
-    });
-    console.log("new acces token ", newAccessToken);
-    const newRefreshToken = await generateRefreshJWT({
-      _id: user._id,
-    });
+import jwt from "jsonwebtoken";
+const { sign, verify } = jwt;
+import UserModel from "../../users/Schema.mjs";
+const authenticate = async (req, res, next) => {
+  // try {
+  //   // generate tokens
+  //   const newAccessToken = await generateJWT({
+  //     _id: user._id,
+  //   });
+  //   console.log("new acces token ", newAccessToken);
+  //   const newRefreshToken = await generateRefreshJWT({
+  //     _id: user._id,
+  //   });
 
-    user.refreshTokens = user.refreshTokens.concat({
-      token: newRefreshToken,
-    });
-    await user.save();
+  //   user.refreshTokens = user.refreshTokens.concat({
+  //     token: newRefreshToken,
+  //   });
+  //   await user.save();
 
-    return {
-      token: newAccessToken,
-      refreshToken: newRefreshToken,
-    };
-  } catch (error) {
-    console.log(error);
-    throw new Error(error);
+  //   return {
+  //     token: newAccessToken,
+  //     refreshToken: newRefreshToken,
+  //   };
+  // } catch (error) {
+  //   console.log(error);
+  //   throw new Error(error);
+  // }
+  const apiKey = req.headers["bg-api-key"];
+
+  if (!apiKey) {
+    return res.status(401).json({ error: "API key required" });
   }
+
+  // Directly compare against the API key from environment variable
+  if (apiKey !== process.env.BG_API_Key) {
+    return res.status(403).json({ error: "Invalid API key" });
+  }
+
+  next();
 };
 
 const generateJWT = (payload) =>

@@ -9,7 +9,8 @@ import fs from "fs-extra"; // Import 'fs' directly for 'writeFileSync'
 const { writeFile } = fs; // Using writeFileSync
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-
+import authTools from "../middlewares/auth/authTools.mjs";
+const { authenticate } = authTools;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -26,7 +27,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 //import { adminOnlyMiddleware, authorize } from "../middlewares/authorize.mjs";
 
-houseRoute.get("/", async (req, res, next) => {
+houseRoute.get("/", authenticate, async (req, res, next) => {
   try {
     const parsedQuery = q2m(req.query);
     const allListings = await ListingModel.find(
@@ -46,7 +47,7 @@ houseRoute.get("/", async (req, res, next) => {
   }
 });
 
-houseRoute.get("/:id", async (req, res, next) => {
+houseRoute.get("/:id", authenticate, async (req, res, next) => {
   try {
     const ListingById = await ListingModel.findById(req.params.id);
     if (ListingById) {
@@ -63,6 +64,7 @@ houseRoute.post(
   "/:id/upload",
 
   upload.single("house"),
+  authenticate,
   async (req, res, next) => {
     try {
       await writeFile(join(imagePath, `${req.params.id}.png`), req.file.buffer);
@@ -85,6 +87,7 @@ houseRoute.post(
 houseRoute.post(
   "/uploadMultiple/:id",
   upload.array("houses"),
+  authenticate,
   async (req, res, next) => {
     try {
       const images = [];
@@ -168,7 +171,7 @@ houseRoute.post("/:id/tenants", async (req, res, next) => {
           });
         res.send("email Sent");
       } else {
-        res.send("check conditios");
+        res.send("check conditions");
       }
     } else {
       const error = new Error(`Experience with id ${req.params.id} not found`);
@@ -180,53 +183,60 @@ houseRoute.post("/:id/tenants", async (req, res, next) => {
   }
 });
 
-houseRoute.post("/image/:id", upload.array("post"), async (req, res, next) => {
-  try {
-    console.log(req.files);
-    const images = [];
-    await Promise.all(
-      req.files.map(async (e) => {
-        const resolved = await writeFile(
-          join(
-            __dirname,
-            `../../public/images/${req.params.id + e.originalname}`
-          ),
-          e.buffer
-        );
-        images.push(
-          process.env.SERVER_URL + "/images/" + req.params.id + e.originalname
-        );
-      })
-    );
-    await Promise.all(
-      images.map(async (e) => {
-        const post = await update(
-          {
-            _id: req.params.id,
-          },
-          {
-            $push: {
-              images: e,
+houseRoute.post(
+  "/images/image/:id",
+  upload.array("post"),
+  authenticate,
+  async (req, res, next) => {
+    try {
+      console.log(req.files);
+      const images = [];
+      await Promise.all(
+        req.files.map(async (e) => {
+          const resolved = await writeFile(
+            join(
+              __dirname,
+              `../../public/images/${req.params.id + e.originalname}`
+            ),
+            e.buffer
+          );
+          images.push(
+            process.env.SERVER_URL + "/images/" + req.params.id + e.originalname
+          );
+        })
+      );
+      await Promise.all(
+        images.map(async (e) => {
+          const post = await update(
+            {
+              _id: req.params.id,
             },
-          }
-        );
-      })
-    );
-    const added = await findById(req.params.id);
-    res.send(added);
-  } catch (err) {
-    next(err);
+            {
+              $push: {
+                images: e,
+              },
+            }
+          );
+        })
+      );
+      const added = await findById(req.params.id);
+      res.send(added);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-houseRoute.get("/:district", async (req, res, next) => {
+houseRoute.get("/district/:district", async (req, res, next) => {
   try {
     const query = {
       district: req.params.district,
     };
     const listingByDistrict = await ListingModel.find(query);
     if (listingByDistrict) {
-      res.status(200).send(listingByDistrict);
+      res
+        .status(200)
+        .send({ data: listingByDistrict, count: listingByDistrict.length });
     } else {
       res.send(`Location with this adress: ${listingByDistrict} NOT FOUND`);
     }
@@ -235,7 +245,7 @@ houseRoute.get("/:district", async (req, res, next) => {
   }
 });
 
-houseRoute.get("/price/range", async (req, res, next) => {
+houseRoute.get("/price/range", authenticate, async (req, res, next) => {
   try {
     const query = {
       price: req.params.price,
@@ -261,7 +271,7 @@ houseRoute.get("/price/range", async (req, res, next) => {
     next(error);
   }
 });
-houseRoute.post("/", async (req, res, next) => {
+houseRoute.post("/", authenticate, async (req, res, next) => {
   try {
     const newListing = new ListingModel(req.body);
     const addhouse = await newListing.save();
@@ -271,7 +281,7 @@ houseRoute.post("/", async (req, res, next) => {
   }
 });
 
-houseRoute.put("/:id", async (req, res, next) => {
+houseRoute.put("/:id", authenticate, async (req, res, next) => {
   try {
     const updateListings = await ListingModel.findByIdAndUpdate(
       req.params.id,
@@ -289,7 +299,7 @@ houseRoute.put("/:id", async (req, res, next) => {
   }
 });
 
-houseRoute.delete("/:id", async (req, res, next) => {
+houseRoute.delete("/:id", authenticate, async (req, res, next) => {
   try {
     const deleteListings = await ListingModel.findByIdAndDelete(req.params.id);
     if (deleteListings) {

@@ -5,7 +5,7 @@
   "description": "A real Estate project to solve renting issue in Lagos, Nigeria",
   "main": "index.mjs",
   "scripts": {
-    "test": "mocha test/*.test.mjs",
+    "test": "mocha test/*.test.mjs -r dotenv/config",
     "dev": "nodemon -r dotenv/config ./src/index.mjs",
     "start": "node -r dotenv/config ./src/index.mjs"
   },
@@ -36,6 +36,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-list-endpoints": "^7.1.0",
+    "express-session": "^1.18.0",
     "fs-extra": "^11.2.0",
     "helmet": "^4.1.1",
     "jsonwebtoken": "^9.0.2",
@@ -44,6 +45,8 @@
     "multer": "^1.4.2",
     "node-geocoder": "^4.3.0",
     "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
     "pdfmake": "^0.2.10",
     "prettier": "^2.1.2",
     "query-to-mongo": "^0.11.3",
