@@ -32,4 +32,5 @@ jobs:
         SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
         MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION}}
         GEOCODER_API_KEY: ${{ secrets.GEOCODER_API_KEY }}
+        BG_API_Key: ${{ secrets.BG_API_Key }}
     - run: npm test
