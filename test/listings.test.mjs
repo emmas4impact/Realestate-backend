@@ -27,6 +27,7 @@ describe("GET all listings", () => {
       .query(dis)
       .set("bg-api-key", apiKey);
     assert.equal(response.statusCode, 200);
+    console.log(response);
     //assert.equal(response.body.data._id, No)
   });
 });

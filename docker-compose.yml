@@ -1,0 +1,32 @@
+networks:
+  backend_network:
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8088:5002"
+    networks:
+      - backend_network
+    env_file:
+      - .env
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - backend_network
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   depends_on:
+  #     - api
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf

@@ -1,22 +1,17 @@
-FROM node:20.12.2
+FROM node:22-alpine3.18
 
 # Working Directory
 WORKDIR /app
 
-# Copy necessary project files (excluding node_modules) 
 COPY package.json ./ 
 COPY public ./public
 COPY src ./src
-COPY test/api.test.js ./ 
+COPY test/listings.test.mjs ./ 
+COPY test/tenants.test.mjs ./ 
+COPY test/users.test.mjs ./ 
 
-# Install dependencies
 RUN npm install 
 
-# Rest of your Dockerfile ... (EXPOSE, CMD)
+EXPOSE 5005
 
-
-
-EXPOSE 5002  
-# Start Command (Assuming your entry point is index.js)
-#CMD ["/bin/bash"] 
 CMD ["node", "src/index.mjs"] 
