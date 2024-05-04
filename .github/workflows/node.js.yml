@@ -33,4 +33,10 @@ jobs:
         MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION}}
         GEOCODER_API_KEY: ${{ secrets.GEOCODER_API_KEY }}
         BG_API_Key: ${{ secrets.BG_API_Key }}
+    - name: Post Actions
+      if: always()  
+      run: |   
+        mongoose.connection.close() 
+        PID=$(ps aux | grep 'node' | grep -v 'grep' | awk '{print $2}')
+        kill -9 $PI
     
