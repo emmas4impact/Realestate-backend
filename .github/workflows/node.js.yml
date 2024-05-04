@@ -30,6 +30,6 @@ jobs:
     - run: npm start --if-present
       env:
         SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-        MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
+        MONGODB_CONNECTION: ${{ secrets.MONGODB_CONNECTION}}
         GEOCODER_API_KEY: ${{ secrets.GEOCODER_API_KEY }}
     - run: npm test
