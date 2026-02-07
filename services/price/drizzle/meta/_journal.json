@@ -1,0 +1,1 @@
+{"version":"5","dialect":"pg","entries":[{"idx":0,"version":"5","when":1738886400000,"tag":"0000_initial_prices","breakpoints":true},{"idx":1,"version":"5","when":1738886500000,"tag":"0001_rename_effective_to_start_end","breakpoints":true}]}

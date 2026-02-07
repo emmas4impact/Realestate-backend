@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: Property API
+  description: Physical real estate assets (properties). Inventory and prices are attached as arrays on GET /properties/:id.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5004
+
+paths:
+  /properties:
+    get:
+      summary: List properties
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: district
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated properties
+    post:
+      summary: Create property
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PropertyCreate' }
+      responses:
+        '201': { description: Created }
+  /properties/{id}:
+    get:
+      summary: Get property by ID (includes inventory and prices arrays)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Property with inventory[] and prices[] (empty arrays if not filled)
+        '400': { description: Invalid UUID }
+        '404': { description: Not found }
+    put:
+      summary: Update property
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PropertyUpdate' }
+      responses:
+        '200': { description: Updated }
+        '404': { description: Not found }
+    delete:
+      summary: Delete property
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted }
+        '404': { description: Not found }
+
+components:
+  schemas:
+    Property:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { type: string }
+        type: { type: string }
+        category: { type: string }
+        address: { type: string, nullable: true }
+        region: { type: string }
+        district: { type: string }
+        sizeSqft: { type: number, nullable: true }
+        lotSizeSqft: { type: number, nullable: true }
+        bedrooms: { type: integer, nullable: true }
+        bathrooms: { type: number, nullable: true }
+        yearBuilt: { type: integer, nullable: true }
+        description: { type: string }
+        features: { type: array, items: { type: string } }
+        images: { type: array, items: { type: string }, nullable: true }
+        inventory: { type: array, description: "From inventory service; empty if none" }
+        prices: { type: array, description: "From price service; empty if none" }
+        availability: { type: boolean, description: "True if any inventory item has availableQuantity > 0; false by default or when out of stock" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PropertyCreate:
+      type: object
+      required: [type, category, region, district]
+      properties:
+        status: { type: string }
+        type: { type: string }
+        category: { type: string }
+        address: { type: string }
+        region: { type: string }
+        district: { type: string }
+        sizeSqft: { type: number }
+        lotSizeSqft: { type: number }
+        bedrooms: { type: integer }
+        bathrooms: { type: number }
+        yearBuilt: { type: integer }
+        description: { type: string }
+        features: { type: array, items: { type: string } }
+        images: { type: array, items: { type: string } }
+    PropertyUpdate:
+      type: object
+      properties:
+        status: { type: string }
+        type: { type: string }
+        category: { type: string }
+        address: { type: string }
+        region: { type: string }
+        district: { type: string }
+        sizeSqft: { type: number }
+        lotSizeSqft: { type: number }
+        bedrooms: { type: integer }
+        bathrooms: { type: number }
+        yearBuilt: { type: integer }
+        description: { type: string }
+        features: { type: array, items: { type: string } }
+        images: { type: array, items: { type: string } }

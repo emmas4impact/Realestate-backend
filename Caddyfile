@@ -1,3 +1,36 @@
-http://localhost {
-reverse_proxy api:5005
+# Real Estate Backend - API Gateway (optional profile: gateway)
+# Single entrypoint; full path is forwarded to each service.
+# Use: docker compose --profile gateway up
+
+:80 {
+  handle /listings* {
+    reverse_proxy listings-service:5001
+  }
+  handle /users* {
+    reverse_proxy users-service:5002
+  }
+  handle /tenants* {
+    reverse_proxy tenants-service:5003
+  }
+  handle /properties* {
+    reverse_proxy property-service:5004
+  }
+  handle /inventory* {
+    reverse_proxy inventory-service:5005
+  }
+  handle /prices* {
+    reverse_proxy price-service:5006
+  }
+  handle /api-docs* {
+    reverse_proxy listings-service:5001
+  }
+  handle /swagger-ui* {
+    reverse_proxy platform-service:5010
+  }
+  handle_path /platform* {
+    reverse_proxy platform-service:5010
+  }
+  handle {
+    respond "Real Estate API Gateway" 200
+  }
 }

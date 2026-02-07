@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: Price API
+  description: Pricing records per property (sale, rent). Returned as array in property response.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5006
+
+paths:
+  /prices:
+    get:
+      summary: List prices (optional filter by propertyId)
+      parameters:
+        - name: propertyId
+          in: query
+          schema: { type: string, format: uuid }
+          description: "When set, returns { data: [...] } for that property (used by property service)"
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: Price list or data array for property }
+    post:
+      summary: Create one or more price records
+      description: "Send a single price object or { prices: [ ... ] } with an array of price objects (each with propertyId, amount; can be for different properties). Returns single object for single payload, or { data: [...] } for { prices } array."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - { $ref: '#/components/schemas/PriceCreate' }
+                - $ref: '#/components/schemas/PriceCreateBatch'
+      responses:
+        '201': { description: "Created (single object or { data } array)" }
+  /prices/{id}:
+    get:
+      summary: Get price record by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Price record }
+        '404': { description: Not found }
+    put:
+      summary: Update price record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PriceUpdate' }
+      responses:
+        '200': { description: Updated }
+        '404': { description: Not found }
+    delete:
+      summary: Delete price record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted }
+        '404': { description: Not found }
+
+components:
+  schemas:
+    Price:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        propertyId: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string }
+        type: { type: string }
+        start_at: { type: string, format: date-time, nullable: true }
+        end_at: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PriceCreate:
+      type: object
+      required: [propertyId, amount]
+      properties:
+        propertyId: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string, default: "USD" }
+        type: { type: string, default: "sale" }
+        start_at: { type: string, format: date-time }
+        end_at: { type: string, format: date-time }
+    PriceCreateBatch:
+      type: object
+      required: [prices]
+      properties:
+        prices:
+          type: array
+          items: { $ref: '#/components/schemas/PriceCreate' }
+    PriceUpdate:
+      type: object
+      properties:
+        propertyId: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string }
+        type: { type: string }
+        start_at: { type: string, format: date-time }
+        end_at: { type: string, format: date-time }

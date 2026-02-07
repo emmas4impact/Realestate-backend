@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Inventory API
+  description: Quantity/units per property (e.g. number of houses). Returned as array in property response.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5005
+
+paths:
+  /inventory:
+    get:
+      summary: List inventory (optional filter by propertyId)
+      parameters:
+        - name: propertyId
+          in: query
+          schema: { type: string, format: uuid }
+          description: "When set, returns { data: [...] } for that property (used by property service)"
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: Inventory list or data array for property }
+    post:
+      summary: Create one or more inventory items
+      description: "Send a single inventory object or { inventory: [ ... ] } with an array of items (each with propertyId; can be for different properties). Returns single object for single payload, or { data: [...] } for batch."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - { $ref: '#/components/schemas/InventoryCreate' }
+                - { $ref: '#/components/schemas/InventoryCreateBatch' }
+      responses:
+        '201': { description: "Created (single object or { data } array)" }
+  /inventory/{id}:
+    get:
+      summary: Get inventory item by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Inventory item }
+        '404': { description: Not found }
+    put:
+      summary: Update inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InventoryUpdate' }
+      responses:
+        '200': { description: Updated }
+        '404': { description: Not found }
+    delete:
+      summary: Delete inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { description: Deleted }
+        '404': { description: Not found }
+  /inventory/{id}/decrement-available:
+    patch:
+      summary: Decrement available quantity (e.g. when unit is rented or sold)
+      description: "Decrements availableQuantity by 1 or by optional body.amount (min 0). Use after renting/selling a unit."
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: { type: integer, minimum: 1, default: 1 }
+      responses:
+        '200': { description: Updated inventory item }
+        '400': { description: Invalid id (UUID) }
+        '404': { description: Not found }
+
+components:
+  schemas:
+    InventoryItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        propertyId: { type: string, format: uuid }
+        quantity: { type: integer }
+        availableQuantity: { type: integer, description: "Decrements when unit is rented/sold; starts equal to quantity" }
+        unitType: { type: string }
+        name: { type: string, nullable: true }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    InventoryCreate:
+      type: object
+      required: [propertyId]
+      properties:
+        propertyId: { type: string, format: uuid }
+        quantity: { type: integer, default: 1 }
+        availableQuantity: { type: integer, description: "Optional; defaults to quantity (capped at quantity)" }
+        unitType: { type: string, default: "unit" }
+        name: { type: string }
+    InventoryCreateBatch:
+      type: object
+      required: [inventory]
+      properties:
+        inventory:
+          type: array
+          items: { $ref: '#/components/schemas/InventoryCreate' }
+    InventoryUpdate:
+      type: object
+      properties:
+        propertyId: { type: string, format: uuid }
+        quantity: { type: integer }
+        availableQuantity: { type: integer, minimum: 0 }
+        unitType: { type: string }
+        name: { type: string }
