@@ -1,32 +1,234 @@
+# Real Estate Backend - Microservices
+# Each API runs as its own service; one compose for the entire project.
+# Standards: OpenAPI, RESO-aligned listings, OAuth2/OIDC, PostgreSQL
+
 networks:
   backend_network:
+    driver: bridge
 
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-realestate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-realestate_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-realestate}
     ports:
-      - "8088:5002"
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - backend_network
-    env_file:
-      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-realestate} -d ${POSTGRES_DB:-realestate}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Listings (Properties) API - RESO-aligned, OpenAPI; links to property + price
+  listings-service:
+    build:
+      context: .
+      dockerfile: services/listings/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${LISTINGS_PORT:-5001}:5001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5001
+      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      GEOCODER_API_KEY: ${GEOCODER_API_KEY:-}
+      SERVER_URL: ${SERVER_URL:-http://localhost:5001}
+      PROPERTY_SERVICE_URL: http://property-service:5004
+      PRICE_SERVICE_URL: http://price-service:5006
+      BG_API_Key: ${BG_API_Key:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      property-service:
+        condition: service_started
+      price-service:
+        condition: service_started
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/listings
+        - action: rebuild
+          path: ./packages/shared
+
+  # Users & Auth API - OAuth2/OIDC-ready, OpenAPI
+  users-service:
+    build:
+      context: .
+      dockerfile: services/users/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${USERS_PORT:-5002}:5002"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5002
+      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      JWT_SECRET: ${JWT_SECRET:-change-me-jwt-secret-min-32-chars}
+      REFRESH_JWT_SECRET: ${REFRESH_JWT_SECRET:-change-me-refresh-secret-min-32-chars}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/users
+        - action: rebuild
+          path: ./packages/shared
+
+  # Tenants API - OpenAPI
+  tenants-service:
+    build:
+      context: .
+      dockerfile: services/tenants/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${TENANTS_PORT:-5003}:5003"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5003
+      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      LISTINGS_SERVICE_URL: http://listings-service:5001
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      listings-service:
+        condition: service_started
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/tenants
+        - action: rebuild
+          path: ./packages/shared
+
+  # Property API - physical assets; GET /properties/:id returns inventory[] and prices[]
+  property-service:
+    build:
+      context: .
+      dockerfile: services/property/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PROPERTY_PORT:-5004}:5004"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5004
+      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      INVENTORY_SERVICE_URL: http://inventory-service:5005
+      PRICE_SERVICE_URL: http://price-service:5006
+      BG_API_Key: ${BG_API_Key:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/property
+        - action: rebuild
+          path: ./packages/shared
+
+  # Inventory API - quantity/units per property
+  inventory-service:
+    build:
+      context: .
+      dockerfile: services/inventory/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${INVENTORY_PORT:-5005}:5005"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5005
+      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      BG_API_Key: ${BG_API_Key:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/inventory
+        - action: rebuild
+          path: ./packages/shared
+
+  # Price API - pricing records per property
+  price-service:
+    build:
+      context: .
+      dockerfile: services/price/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PRICE_PORT:-5006}:5006"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5006
+      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      BG_API_Key: ${BG_API_Key:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/price
+        - action: rebuild
+          path: ./packages/shared
+
+  # Centralized Swagger UI – combined OpenAPI for all services
+  platform-service:
+    build:
+      context: .
+      dockerfile: services/platform/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PLATFORM_PORT:-5010}:5010"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5010
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/platform
+
+  # Optional: reverse proxy for single entrypoint (Caddy)
   caddy:
     image: caddy:alpine
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - backend_network
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-  # nginx:
-  #   image: nginx:alpine
-  #   ports:
-  #     - "80:80"
-  #   depends_on:
-  #     - api
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - listings-service
+      - users-service
+      - tenants-service
+      - property-service
+      - inventory-service
+      - price-service
+      - platform-service
+    networks:
+      - backend_network
+    profiles:
+      - gateway
+
+volumes:
+  postgres_data:

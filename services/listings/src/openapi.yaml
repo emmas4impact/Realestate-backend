@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: Listings API (Real Estate - RESO-aligned)
+  description: |
+    Property listings API aligned with RESO Web API concepts and OpenAPI standards.
+    Supports filtering, sorting, pagination, and geographic metadata (ISO 19115-style).
+  version: 1.0.0
+  contact:
+    name: Bridge Homes
+
+servers:
+  - url: http://localhost:5001
+    description: Local
+
+tags:
+  - name: Listings
+    description: Property listings (RESO-aligned)
+
+paths:
+  /listings:
+    get:
+      summary: List properties
+      tags: [Listings]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+        - name: district
+          in: query
+          schema: { type: string }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [price_asc, price_desc, date_desc] }
+        - name: listingType
+          in: query
+          schema: { type: string, enum: [rent, sales] }
+          description: Filter by deal type (rent or sales)
+      responses:
+        '200':
+          description: Paginated list of listings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListingsResponse'
+      security: [{ ApiKeyAuth: [] }]
+    post:
+      summary: Create listing
+      tags: [Listings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ListingCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Listing' }
+        '400':
+          description: Invalid input or no price found for property and listing type
+        '404':
+          description: Property not found
+        '409':
+          description: Property currently unavailable
+      security: [{ ApiKeyAuth: [] }]
+
+  /listings/{id}:
+    get:
+      summary: Get listing by ID
+      tags: [Listings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Listing
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Listing' }
+        '404':
+          description: Not found
+      security: [{ ApiKeyAuth: [] }]
+    put:
+      summary: Update listing
+      tags: [Listings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ListingUpdate' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Listing' }
+        '404':
+          description: Not found
+      security: [{ ApiKeyAuth: [] }]
+    delete:
+      summary: Delete listing
+      tags: [Listings]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Deleted
+        '404':
+          description: Not found
+      security: [{ ApiKeyAuth: [] }]
+
+  /listings/districts/{district}:
+    get:
+      summary: List all listings in a district
+      tags: [Listings]
+      parameters:
+        - name: district
+          in: path
+          required: true
+          schema: { type: string }
+          description: District name to filter by
+      responses:
+        '200':
+          description: All listings available in that district
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListingsResponse' }
+      security: [{ ApiKeyAuth: [] }]
+
+  /listings/price/range:
+    get:
+      summary: List by price range
+      tags: [Listings]
+      parameters:
+        - name: minPrice
+          in: query
+          required: true
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          required: true
+          schema: { type: number }
+      responses:
+        '200':
+          description: Listings in price range
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ListingsResponse' }
+      security: [{ ApiKeyAuth: [] }]
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: bg-api-key
+      description: API key for service access
+
+  schemas:
+    Listing:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        propertyId: { type: string, format: uuid, description: Linked property (must be available) }
+        listingType: { type: string, enum: [rent, sales], description: Deal type; price is fetched from price service by this type }
+        status: { type: string }
+        title: { type: string }
+        address: { type: string }
+        region: { type: string }
+        district: { type: string }
+        type: { type: string }
+        category: { type: string }
+        price: { type: number }
+        rating: { type: number }
+        description: { type: string }
+        features: { type: array, items: { type: string } }
+        details: { type: array, items: { type: string } }
+        image: { type: string }
+        images: { type: array, items: { type: string } }
+        location:
+          type: object
+          description: ISO 19115-style geographic metadata
+          properties:
+            type: { type: string, enum: [Point] }
+            coordinates: { type: array, items: { type: number }, minItems: 2, maxItems: 2 }
+            formattedAddress: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    ListingCreate:
+      type: object
+      description: |
+        Minimal payload: only propertyId and listingType are required.
+        All other fields (title, address, region, district, type, category, description, features, images, etc.)
+        are filled from the property; you may optionally override any of them.
+      required: [propertyId, listingType]
+      properties:
+        propertyId: { type: string, format: uuid }
+        listingType: { type: string, enum: [rent, sales] }
+        title: { type: string, description: 'optional; default from property address or "Property in {region}"' }
+        address: { type: string }
+        region: { type: string }
+        district: { type: string }
+        type: { type: string }
+        category: { type: string }
+        rating: { type: number }
+        description: { type: string }
+        features: { type: array, items: { type: string } }
+        details: { type: array, items: { type: string } }
+        image: { type: string }
+        images: { type: array, items: { type: string } }
+    ListingUpdate:
+      type: object
+      properties:
+        propertyId: { type: string, format: uuid }
+        listingType: { type: string, enum: [rent, sales] }
+        title: { type: string }
+        address: { type: string }
+        region: { type: string }
+        district: { type: string }
+        type: { type: string }
+        category: { type: string }
+        price: { type: number }
+        rating: { type: number }
+        description: { type: string }
+        features: { type: array, items: { type: string } }
+        details: { type: array, items: { type: string } }
+        image: { type: string }
+        images: { type: array, items: { type: string } }
+    PaginationMeta:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+        totalPages: { type: integer }
+        hasNext: { type: boolean }
+        hasPrev: { type: boolean }
+    ListingsResponse:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Listing' } }
+        meta: { $ref: '#/components/schemas/PaginationMeta' }

@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS "listings" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"status" varchar(50) DEFAULT 'Active' NOT NULL,
+	"title" varchar(255) NOT NULL,
+	"address" varchar(500),
+	"region" varchar(100) NOT NULL,
+	"district" varchar(100) NOT NULL,
+	"type" varchar(50) NOT NULL,
+	"category" varchar(50) NOT NULL,
+	"price" real NOT NULL,
+	"rating" real DEFAULT 0 NOT NULL,
+	"description" text NOT NULL,
+	"features" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"details" jsonb DEFAULT '[]'::jsonb NOT NULL,
+	"image" varchar(1024) DEFAULT 'https://img.fixthephoto.com/blog/images/gallery/news_image_212.jpg' NOT NULL,
+	"images" jsonb DEFAULT '[]'::jsonb,
+	"location" jsonb,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);

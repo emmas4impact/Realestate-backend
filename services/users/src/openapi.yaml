@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: Users & Auth API (OAuth2/OIDC-ready)
+  description: |
+    User management and authentication. JWT access tokens + refresh tokens.
+    Structured for future OAuth2 / OpenID Connect integration.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5002
+
+paths:
+  /users/register:
+    post:
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreate' }
+      responses:
+        '201': { description: Registered }
+        '409': { description: User exists }
+  /users/login:
+    post:
+      summary: "Login (returns cookies: accessToken, refreshToken)"
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { email: { type: string }, password: { type: string } } }
+      responses:
+        '200': { description: OK }
+        '401': { description: Invalid credentials }
+  /users/refreshToken:
+    post:
+      summary: Refresh access token
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { refreshToken: { type: string } } }
+      responses:
+        '200': { description: New tokens }
+        '403': { description: Invalid refresh token }
+  /users/me:
+    get:
+      summary: Current user (requires Bearer token)
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: User }
+        '401': { description: Unauthorized }
+  /users:
+    get:
+      summary: List users
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200': { description: Paginated users }
+  /users/{id}:
+    get:
+      summary: Get user by ID
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: User }
+        '404': { description: Not found }
+    put:
+      summary: Update user
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdate' }
+      responses:
+        '200': { description: Updated }
+        '404': { description: Not found }
+  /users/logout:
+    post:
+      summary: Logout (invalidate refresh token)
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { type: object, properties: { refreshToken: { type: string } } }
+      responses:
+        '200': { description: OK }
+  /users/logoutAll:
+    post:
+      summary: Logout from all devices
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        surname: { type: string }
+        username: { type: string }
+        email: { type: string }
+        role: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    UserCreate:
+      type: object
+      required: [name, surname, username, email, password, role]
+      properties:
+        name: { type: string }
+        surname: { type: string }
+        username: { type: string }
+        email: { type: string }
+        password: { type: string, minLength: 7 }
+        role: { type: string }
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        surname: { type: string }
+        username: { type: string }
+        email: { type: string }
+        role: { type: string }
+        password: { type: string }
