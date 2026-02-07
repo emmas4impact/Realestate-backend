@@ -10,10 +10,13 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-realestate}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-realestate_secret}
-      POSTGRES_DB: ${POSTGRES_DB:-realestate}
+      # Required: set POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB in .env (no defaults in file)
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -21,7 +24,7 @@ services:
     networks:
       - backend_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-realestate} -d ${POSTGRES_DB:-realestate}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -37,7 +40,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5001
-      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       GEOCODER_API_KEY: ${GEOCODER_API_KEY:-}
       SERVER_URL: ${SERVER_URL:-http://localhost:5001}
       PROPERTY_SERVICE_URL: http://property-service:5004
@@ -70,7 +73,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5002
-      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET:-change-me-jwt-secret-min-32-chars}
       REFRESH_JWT_SECRET: ${REFRESH_JWT_SECRET:-change-me-refresh-secret-min-32-chars}
     depends_on:
@@ -96,7 +99,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5003
-      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       LISTINGS_SERVICE_URL: http://listings-service:5001
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
     depends_on:
@@ -124,7 +127,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5004
-      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       INVENTORY_SERVICE_URL: http://inventory-service:5005
       PRICE_SERVICE_URL: http://price-service:5006
       BG_API_Key: ${BG_API_Key:-}
@@ -151,7 +154,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5005
-      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       BG_API_Key: ${BG_API_Key:-}
     depends_on:
       postgres:
@@ -176,7 +179,7 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5006
-      DATABASE_URL: postgres://${POSTGRES_USER:-realestate}:${POSTGRES_PASSWORD:-realestate_secret}@postgres:5432/${POSTGRES_DB:-realestate}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       BG_API_Key: ${BG_API_Key:-}
     depends_on:
       postgres:
