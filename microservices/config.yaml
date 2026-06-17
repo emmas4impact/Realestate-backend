@@ -1,0 +1,347 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: users
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: users
+  template:
+    metadata:
+      labels:
+        app: users
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/user-services:1.0
+        ports:
+        - containerPort: 5002
+        env:
+        - name: PORT
+          value: "5002"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: users
+spec:
+  type: ClusterIP
+  selector:
+    app: users
+  ports:
+  - protocol: TCP
+    port: 5002
+    targetPort: 5002
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: listings
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: listings
+  template:
+    metadata:
+      labels:
+        app: listings
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/listing-service:1.0
+        ports:
+        - containerPort: 5001
+        env:
+        - name: PORT
+          value: "5001"
+        - name: PROPERTY_SERVICE_URL
+          value: "http://property:5004"
+        - name: PRICE_SERVICE_URL
+          value: "http://price:5006"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: listings
+spec:
+  type: ClusterIP
+  selector:
+    app: listings
+  ports:
+  - protocol: TCP
+    port: 5001
+    targetPort: 5001
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: property
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: property
+  template:
+    metadata:
+      labels:
+        app: property
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/property-service:1.0
+        ports:
+        - containerPort: 5004
+        env:
+        - name: PORT
+          value: "5004"
+        - name: INVENTORY_SERVICE_URL
+          value: "http://inventory:5005"
+        - name: PRICE_SERVICE_URL
+          value: "http://price:5006"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: property
+spec:
+  type: ClusterIP
+  selector:
+    app: property
+  ports:
+  - protocol: TCP
+    port: 5004
+    targetPort: 5004
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenant
+  template:
+    metadata:
+      labels:
+        app: tenant
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/tenant-service:1.0
+        ports:
+        - containerPort: 5003
+        env:
+        - name: PORT
+          value: "5003"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant
+spec:
+  type: ClusterIP
+  selector:
+    app: tenant
+  ports:
+  - protocol: TCP
+    port: 5003
+    targetPort: 5003
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/inventory-service:1.0
+        ports:
+        - containerPort: 5005
+        env:
+        - name: PORT
+          value: "5005"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inventory
+spec:
+  type: ClusterIP
+  selector:
+    app: inventory
+  ports:
+  - protocol: TCP
+    port: 5005
+    targetPort: 5005
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: price
+  template:
+    metadata:
+      labels:
+        app: price
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/price-service:1.0
+        ports:
+        - containerPort: 5006
+        env:
+        - name: "PORT"
+          value: "5006"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: price
+spec:
+  type: ClusterIP
+  selector:
+    app: price
+  ports:
+  - protocol: TCP
+    port: 5006
+    targetPort: 5006
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: platform
+  template:
+    metadata:
+      labels:
+        app: platform
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service:1.0
+        ports:
+        - containerPort: 5010
+        env:
+        - name: PORT
+          value: "5010"
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: platform
+  ports:
+  - protocol: TCP
+    port: 5010
+    targetPort: 5010
+    
