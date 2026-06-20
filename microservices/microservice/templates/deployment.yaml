@@ -12,6 +12,8 @@ spec:
       labels:
         app: {{ .Values.appName }}
     spec:
+      imagePullSecrets:
+      - name: {{ .Values.imageSecrets }}
       containers:
       - name: {{ .Values.appName }}
         image: "{{ .Values.appImage }}:{{ .Values.appVersion }}"
@@ -22,4 +24,14 @@ spec:
         - name: {{ .name }}
           value: {{ .value | quote }}
         {{- end}}
+        envFrom:
+        - secretRef:
+            name: {{ .Values.secretName }}
+        resources:
+          requests: 
+            cpu: {{ .Values.cpuRequest }}
+            memory: {{ .Values.memoryRequest }}
+          limits:
+            cpu: {{ .Values.cpuLimits }}
+            memory: {{ .Values.memoryLimits}}
        

@@ -1,0 +1,10 @@
+appName: price
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/price-service
+appVersion: "1.0"
+appReplicas: 1
+containerPort: 5006
+containerEnvVars: 
+- name: PORT
+  value: "5006"
+
+servicePort: 5006
