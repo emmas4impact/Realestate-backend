@@ -3,6 +3,8 @@ import { pgTable, uuid, varchar, text, real, jsonb, timestamp } from "drizzle-or
 /** Listings table (same DB) - used to populate listing info in tenant responses */
 export const listings = pgTable("listings", {
   id: uuid("id").primaryKey().defaultRandom(),
+  propertyId: uuid("property_id").notNull(),
+  listingType: varchar("listing_type", { length: 50 }).notNull(),
   status: varchar("status", { length: 50 }).notNull().default("Active"),
   title: varchar("title", { length: 255 }).notNull(),
   address: varchar("address", { length: 500 }),

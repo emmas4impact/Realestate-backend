@@ -17,8 +17,9 @@ COPY --from=builder /app/packages/shared/package.json ./packages/shared/
 COPY --from=builder /app/services/tenants/dist ./services/tenants/dist
 COPY --from=builder /app/services/tenants/package.json ./services/tenants/
 COPY --from=builder /app/services/tenants/src/openapi.yaml ./services/tenants/dist/
+COPY --from=builder /app/services/tenants/drizzle ./services/tenants/drizzle
 COPY --from=builder /app/package.json ./
 
 WORKDIR /app/services/tenants
 EXPOSE 5003
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "node dist/migrate.js && node dist/index.js"]
