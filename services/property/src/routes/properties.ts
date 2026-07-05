@@ -19,6 +19,31 @@ function availabilityFromInventory(inventory: unknown[]): boolean {
   });
 }
 
+function readRequiredString(body: Record<string, unknown>, field: string, missing: string[]): string {
+  const value = body[field];
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+
+  missing.push(field);
+  return "";
+}
+
+function readOptionalNumber(body: Record<string, unknown>, field: string, invalid: string[]): number | null {
+  const value = body[field];
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  if (Number.isFinite(parsed)) {
+    return parsed;
+  }
+
+  invalid.push(field);
+  return null;
+}
+
 const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
@@ -26,10 +51,12 @@ router.get("/", async (req: Request, res: Response) => {
   const district = req.query.district as string | undefined;
   const region = req.query.region as string | undefined;
   const type = req.query.type as string | undefined;
+  const category = req.query.category as string | undefined;
   const conditions = [];
   if (district) conditions.push(eq(propertiesTable.district, district));
   if (region) conditions.push(eq(propertiesTable.region, region));
   if (type) conditions.push(eq(propertiesTable.type, type));
+  if (category) conditions.push(eq(propertiesTable.category, category));
   const where = conditions.length ? and(...conditions) : undefined;
 
   const orderBy = desc(propertiesTable.createdAt);
@@ -97,20 +124,45 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response, next) => {
   try {
     const body = req.body as Record<string, unknown>;
+    const missing: string[] = [];
+    const invalid: string[] = [];
+    const type = readRequiredString(body, "type", missing);
+    const category = readRequiredString(body, "category", missing);
+    const region = readRequiredString(body, "region", missing);
+    const district = readRequiredString(body, "district", missing);
+
+    const sizeSqft = readOptionalNumber(body, "sizeSqft", invalid);
+    const lotSizeSqft = readOptionalNumber(body, "lotSizeSqft", invalid);
+    const bedrooms = readOptionalNumber(body, "bedrooms", invalid);
+    const bathrooms = readOptionalNumber(body, "bathrooms", invalid);
+    const yearBuilt = readOptionalNumber(body, "yearBuilt", invalid);
+
+    if (missing.length > 0 || invalid.length > 0) {
+      const messages = [
+        missing.length > 0 ? `Missing required fields: ${missing.join(", ")}` : undefined,
+        invalid.length > 0 ? `Invalid numeric fields: ${invalid.join(", ")}` : undefined,
+      ].filter(Boolean);
+      res.status(400).json({
+        success: false,
+        error: { code: "VALIDATION_ERROR", message: messages.join("; ") },
+      });
+      return;
+    }
+
     const [inserted] = await db
       .insert(propertiesTable)
       .values({
         status: (body.status as string) ?? "Active",
-        type: body.type as string,
-        category: body.category as string,
+        type,
+        category,
         address: (body.address as string) ?? null,
-        region: body.region as string,
-        district: body.district as string,
-        sizeSqft: body.sizeSqft != null ? Number(body.sizeSqft) : null,
-        lotSizeSqft: body.lotSizeSqft != null ? Number(body.lotSizeSqft) : null,
-        bedrooms: body.bedrooms != null ? Number(body.bedrooms) : null,
-        bathrooms: body.bathrooms != null ? Number(body.bathrooms) : null,
-        yearBuilt: body.yearBuilt != null ? Number(body.yearBuilt) : null,
+        region,
+        district,
+        sizeSqft,
+        lotSizeSqft,
+        bedrooms,
+        bathrooms,
+        yearBuilt,
         description: (body.description as string) ?? "",
         features: Array.isArray(body.features) ? (body.features as string[]) : [],
         images: Array.isArray(body.images) ? (body.images as string[]) : [],

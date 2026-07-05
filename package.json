@@ -5,14 +5,15 @@
   "description": "Real Estate API - TypeScript, PostgreSQL, OpenAPI, RESO-aligned",
   "type": "module",
   "scripts": {
-    "dev": "docker compose up --build",
+    "dev": "docker compose --env-file .env --env-file IMAGE_VERSION up --build",
     "dev:listings": "cd services/listings && bun run dev",
     "dev:users": "cd services/users && bun run dev",
     "dev:tenants": "cd services/tenants && bun run dev",
     "dev:platform": "cd services/platform && npx tsx watch src/index.ts",
     "build": "npm run build --workspaces --if-present",
+    "docker:build": "sh scripts/build-images.sh",
     "test": "npm run test --workspaces --if-present",
-    "db:up": "docker compose up -d postgres",
+    "db:up": "docker compose --env-file .env --env-file IMAGE_VERSION up -d postgres",
     "db:generate": "npm run db:generate --workspaces --if-present",
     "db:migrate": "npm run db:migrate --workspaces --if-present"
   },
@@ -26,6 +27,6 @@
   "author": "Emmanuel Adedeji",
   "license": "ISC",
   "devDependencies": {
-    "drizzle-orm": "^0.29.3"
+    "drizzle-orm": "^0.45.2"
   }
 }

@@ -26,6 +26,8 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
 
 app.use(apiKeyAuth);
+app.use("/inventories", inventoryRouter);
+// Backward-compatible alias. Prefer /inventories for new clients.
 app.use("/inventory", inventoryRouter);
 
 app.use(errorHandler);

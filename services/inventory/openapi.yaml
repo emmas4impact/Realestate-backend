@@ -8,7 +8,7 @@ servers:
   - url: http://localhost:5005
 
 paths:
-  /inventory:
+  /inventories:
     get:
       summary: List inventory (optional filter by propertyId)
       parameters:
@@ -37,7 +37,7 @@ paths:
                 - { $ref: '#/components/schemas/InventoryCreateBatch' }
       responses:
         '201': { description: "Created (single object or { data } array)" }
-  /inventory/{id}:
+  /inventories/{id}:
     get:
       summary: Get inventory item by ID
       parameters:
@@ -72,7 +72,7 @@ paths:
       responses:
         '204': { description: Deleted }
         '404': { description: Not found }
-  /inventory/{id}/decrement-available:
+  /inventories/{id}/decrement-available:
     patch:
       summary: Decrement available quantity (e.g. when unit is rented or sold)
       description: "Decrements availableQuantity by 1 or by optional body.amount (min 0). Use after renting/selling a unit."

@@ -4,6 +4,7 @@ import swaggerUi from "swagger-ui-express";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { buildMergedSpec } from "./mergeSpecs.js";
+import { buildVersionResponse } from "./version.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -37,6 +38,7 @@ app.use(express.json());
 // Specific routes first so they are not handled by Swagger UI static
 app.get("/openapi.json", (_req, res) => res.json(mergedSpec));
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/version", (_req, res) => res.json(buildVersionResponse()));
 // Mount Swagger UI static assets (swagger-ui-bundle.js, swagger-ui.css, etc.) so the UI page can load
 app.use(swaggerUi.serve);
 app.get("/", swaggerUi.setup(mergedSpec, { explorer: true }));
