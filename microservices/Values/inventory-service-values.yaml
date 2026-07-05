@@ -1,0 +1,10 @@
+appName: inventory
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/inventory-service
+appVersion: "1.0"
+appReplicas: 1
+containerPort: 5005
+containerEnvVars: 
+- name: PORT
+  value: "5005"
+
+servicePort: 5005

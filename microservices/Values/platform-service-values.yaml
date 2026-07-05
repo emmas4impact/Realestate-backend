@@ -1,0 +1,11 @@
+appName: platform
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service
+appVersion: "1.0"
+appReplicas: 1
+containerPort: 5010
+containerEnvVars: 
+- name: PORT
+  value: "5010"
+
+serviceType: LoadBalancer
+servicePort: 5010

@@ -1,0 +1,37 @@
+releases:
+  - name: inventoryservice
+    chart: microservice
+    values: 
+      - Values/inventory-service-values.yaml
+
+  - name: listingservice
+    chart: microservice
+    values: 
+      - Values/listing-service-values.yaml
+
+  - name: platformservice
+    chart: microservice
+    values: 
+      - Values/platform-service-values.yaml
+
+  - name: priceservice
+    chart: microservice
+    values: 
+      - Values/price-service-values.yaml
+
+  - name: propertyservice
+    chart: microservice
+    values: 
+      - Values/property-service-values.yaml
+
+  - name: tenantservice
+    chart: microservice
+    values: 
+      - Values/tenant-service-values.yaml
+
+  - name: userservice
+    chart: microservice
+    values: 
+      - Values/users-service-values.yaml
+
+  

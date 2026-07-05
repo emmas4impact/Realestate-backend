@@ -1,0 +1,20 @@
+appName: servicename
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/servicename
+appVersion: "1.0"
+appReplicas: 1
+secretName: app-secrets
+imageSecrets: ecr-secret
+containerPort: 5002
+containerEnvVars:
+- name: ENV_VAR_ONE
+  value: "valueone"
+- name: ENV_VAR_TWO
+  value: "valuetwo"
+
+cpuRequest: 50m
+cpuLimits: 200m
+memoryRequest: 64Mi
+memoryLimits: 128Mi
+
+servicePort: 5002
+serviceType: ClusterIP

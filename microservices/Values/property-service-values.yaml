@@ -1,0 +1,14 @@
+appName: property
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/property-service
+appVersion: "1.0"
+appReplicas: 1
+containerPort: 5004
+containerEnvVars: 
+- name: PORT
+  value: "5004"
+- name: INVENTORY_SERVICE_URL
+  value: "http://inventory:5005"
+- name: PRICE_SERVICE_URL
+  value: "http://price:5006"
+
+servicePort: 5004

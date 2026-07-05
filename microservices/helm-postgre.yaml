@@ -1,0 +1,20 @@
+architecture: replication
+
+auth:
+  postgresPassword: "admin-postgres-password"
+  username: "realestate"
+  password: "realestatepass"
+  database: "realestate"
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: "linode-block-storage"
+    size: 8Gi
+
+readReplicas:
+  replicaCount: 2
+  persistence:
+    enabled: true
+    storageClass: "linode-block-storage"
+    size: 8Gi
