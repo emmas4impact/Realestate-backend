@@ -4,7 +4,7 @@ const priceBase = process.env.PRICE_SERVICE_URL ?? "";
 export async function fetchInventoryForProperty(propertyId: string): Promise<unknown[]> {
   if (!inventoryBase) return [];
   try {
-    const res = await fetch(`${inventoryBase.replace(/\/$/, "")}/inventory?propertyId=${encodeURIComponent(propertyId)}`, {
+    const res = await fetch(`${inventoryBase.replace(/\/$/, "")}/inventories?propertyId=${encodeURIComponent(propertyId)}`, {
       headers: { "bg-api-key": process.env.BG_API_Key ?? "" },
     });
     if (!res.ok) return [];

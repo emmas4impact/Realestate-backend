@@ -31,7 +31,7 @@ services:
 
   # Listings (Properties) API - RESO-aligned, OpenAPI; links to property + price
   listings-service:
-    image: ${IMAGE_REGISTRY:-realestate}/listings:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/listings:${LISTINGS_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/listings/Dockerfile
@@ -65,7 +65,7 @@ services:
 
   # Users & Auth API - OAuth2/OIDC-ready, OpenAPI
   users-service:
-    image: ${IMAGE_REGISTRY:-realestate}/users:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/users:${USERS_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/users/Dockerfile
@@ -92,7 +92,7 @@ services:
 
   # Tenants API - OpenAPI
   tenants-service:
-    image: ${IMAGE_REGISTRY:-realestate}/tenants:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/tenants:${TENANTS_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/tenants/Dockerfile
@@ -104,11 +104,15 @@ services:
       PORT: 5003
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       LISTINGS_SERVICE_URL: http://listings-service:5001
+      INVENTORY_SERVICE_URL: http://inventory-service:5005
+      BG_API_Key: ${BG_API_Key:-}
       SENDGRID_API_KEY: ${SENDGRID_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
       listings-service:
+        condition: service_started
+      inventory-service:
         condition: service_started
     networks:
       - backend_network
@@ -121,7 +125,7 @@ services:
 
   # Property API - physical assets; GET /properties/:id returns inventory[] and prices[]
   property-service:
-    image: ${IMAGE_REGISTRY:-realestate}/property:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/property:${PROPERTY_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/property/Dockerfile
@@ -149,7 +153,7 @@ services:
 
   # Inventory API - quantity/units per property
   inventory-service:
-    image: ${IMAGE_REGISTRY:-realestate}/inventory:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/inventory:${INVENTORY_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/inventory/Dockerfile
@@ -175,7 +179,7 @@ services:
 
   # Price API - pricing records per property
   price-service:
-    image: ${IMAGE_REGISTRY:-realestate}/price:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/price:${PRICE_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/price/Dockerfile
@@ -201,7 +205,7 @@ services:
 
   # Centralized Swagger UI – combined OpenAPI for all services
   platform-service:
-    image: ${IMAGE_REGISTRY:-realestate}/platform:${IMAGE_TAG:-1.0.0}
+    image: ${IMAGE_REGISTRY:-realestate}/platform:${PLATFORM_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
     build:
       context: .
       dockerfile: services/platform/Dockerfile
@@ -211,12 +215,49 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5010
+      RELEASE_NAME: ${RELEASE_NAME:-}
+      NAMESPACE: ${NAMESPACE:-local}
+      GPU_RELEASE: ${GPU_RELEASE:-}
+      LISTINGS_IMAGE_TAG: ${LISTINGS_IMAGE_TAG:-}
+      USERS_IMAGE_TAG: ${USERS_IMAGE_TAG:-}
+      TENANTS_IMAGE_TAG: ${TENANTS_IMAGE_TAG:-}
+      PROPERTY_IMAGE_TAG: ${PROPERTY_IMAGE_TAG:-}
+      INVENTORY_IMAGE_TAG: ${INVENTORY_IMAGE_TAG:-}
+      PRICE_IMAGE_TAG: ${PRICE_IMAGE_TAG:-}
+      PLATFORM_IMAGE_TAG: ${PLATFORM_IMAGE_TAG:-}
+      SEARCH_IMAGE_TAG: ${SEARCH_IMAGE_TAG:-}
     networks:
       - backend_network
     develop:
       watch:
         - action: rebuild
           path: ./services/platform
+
+  # Search API - aggregated property/listing/tenant availability search
+  search-service:
+    image: ${IMAGE_REGISTRY:-realestate}/search:${SEARCH_IMAGE_TAG:-${IMAGE_TAG:-1.0.0}}
+    build:
+      context: .
+      dockerfile: services/search/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${SEARCH_PORT:-5007}:5007"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5007
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BG_API_Key: ${BG_API_Key:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend_network
+    develop:
+      watch:
+        - action: rebuild
+          path: ./services/search
+        - action: rebuild
+          path: ./packages/shared
 
   # Optional: reverse proxy for single entrypoint (Caddy)
   caddy:
@@ -235,6 +276,7 @@ services:
       - inventory-service
       - price-service
       - platform-service
+      - search-service
     networks:
       - backend_network
     profiles:

@@ -7,7 +7,7 @@ import YAML from "yaml";
 import swaggerUi from "swagger-ui-express";
 import { apiKeyAuth } from "./middleware/auth.js";
 import { errorHandler } from "./middleware/errorHandler.js";
-import inventoryRouter from "./routes/inventory.js";
+import searchRouter from "./routes/search.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openapiPath = join(__dirname, "openapi.yaml");
@@ -26,9 +26,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
 
 app.use(apiKeyAuth);
-app.use("/inventories", inventoryRouter);
-// Backward-compatible alias. Prefer /inventories for new clients.
-app.use("/inventory", inventoryRouter);
+app.use("/search", searchRouter);
 
 app.use(errorHandler);
 export default app;

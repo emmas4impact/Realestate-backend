@@ -2,11 +2,70 @@ import { Router, type Request, type Response } from "express";
 import { eq, sql } from "drizzle-orm";
 import { db, tenants as tenantsTable, listings as listingsTable } from "../db/index.js";
 import { parsePagination, buildPaginationMeta } from "@realestate/shared";
+import { consumeInventoryForProperty, releaseInventoryForProperty } from "../services/inventory.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function isValidUuid(value: string): boolean {
   return UUID_REGEX.test(value);
+}
+
+const LISTING_TYPES = ["rent", "sales"] as const;
+type ListingType = (typeof LISTING_TYPES)[number];
+
+function isValidListingType(value: unknown): value is ListingType {
+  return typeof value === "string" && LISTING_TYPES.includes(value as ListingType);
+}
+
+interface ValidListing {
+  propertyId: string;
+}
+
+async function findListingPropertyId(listingId: string, res: Response): Promise<string | null> {
+  const [listing] = await db
+    .select()
+    .from(listingsTable)
+    .where(eq(listingsTable.id, listingId))
+    .limit(1);
+
+  if (!listing) {
+    res.status(404).json({ error: `Listing with id ${listingId} not found` });
+    return null;
+  }
+
+  const propertyId = (listing as { propertyId?: string }).propertyId;
+  if (!propertyId) {
+    res.status(500).json({ error: "Listing is missing propertyId" });
+    return null;
+  }
+
+  return propertyId;
+}
+
+async function validateListingType(listingId: string, listingType: ListingType, res: Response): Promise<ValidListing | null> {
+  const [listing] = await db
+    .select()
+    .from(listingsTable)
+    .where(eq(listingsTable.id, listingId))
+    .limit(1);
+
+  if (!listing) {
+    res.status(404).json({ error: `Listing with id ${listingId} not found` });
+    return null;
+  }
+
+  if ((listing as { listingType?: string }).listingType !== listingType) {
+    res.status(409).json({ error: `Listing is not available for ${listingType}` });
+    return null;
+  }
+
+  const propertyId = (listing as { propertyId?: string }).propertyId;
+  if (!propertyId) {
+    res.status(500).json({ error: "Listing is missing propertyId" });
+    return null;
+  }
+
+  return { propertyId };
 }
 
 const router = Router();
@@ -84,6 +143,21 @@ router.post("/", async (req: Request, res: Response, next) => {
       res.status(400).json({ error: "listingId is required and must be a valid UUID" });
       return;
     }
+    if (!isValidListingType(body.listingType)) {
+      res.status(400).json({ error: "listingType is required and must be one of: rent, sales" });
+      return;
+    }
+    const listing = await validateListingType(body.listingId, body.listingType, res);
+    if (!listing) {
+      return;
+    }
+
+    const inventoryResult = await consumeInventoryForProperty(listing.propertyId);
+    if (!inventoryResult.ok) {
+      res.status(inventoryResult.status).json({ error: inventoryResult.message });
+      return;
+    }
+
     const [inserted] = await db
       .insert(tenantsTable)
       .values({
@@ -120,6 +194,13 @@ router.put("/:id", async (req: Request, res: Response, next) => {
         res.status(400).json({ error: "listingId must be a valid UUID" });
         return;
       }
+      if (!isValidListingType(body.listingType)) {
+        res.status(400).json({ error: "listingType is required when changing listingId and must be one of: rent, sales" });
+        return;
+      }
+      if (!(await validateListingType(body.listingId, body.listingType, res))) {
+        return;
+      }
       updates.listingId = body.listingId;
     }
     const [updated] = await db
@@ -137,21 +218,53 @@ router.put("/:id", async (req: Request, res: Response, next) => {
   }
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
-  const id = req.params.id;
-  if (!isValidUuid(id)) {
-    res.status(400).json({ error: "Invalid id: must be a valid UUID" });
-    return;
+router.delete("/:id", async (req: Request, res: Response, next) => {
+  try {
+    const id = req.params.id;
+    if (!isValidUuid(id)) {
+      res.status(400).json({ error: "Invalid id: must be a valid UUID" });
+      return;
+    }
+
+    const [tenant] = await db
+      .select()
+      .from(tenantsTable)
+      .where(eq(tenantsTable.id, id))
+      .limit(1);
+    if (!tenant) {
+      res.status(404).json({ error: `Tenant with id ${id} not found` });
+      return;
+    }
+
+    const listingId = (tenant as { listingId?: string }).listingId;
+    if (!listingId) {
+      res.status(500).json({ error: "Tenant is missing listingId" });
+      return;
+    }
+
+    const propertyId = await findListingPropertyId(listingId, res);
+    if (!propertyId) {
+      return;
+    }
+
+    const inventoryResult = await releaseInventoryForProperty(propertyId);
+    if (!inventoryResult.ok) {
+      res.status(inventoryResult.status).json({ error: inventoryResult.message });
+      return;
+    }
+
+    const [deleted] = await db
+      .delete(tenantsTable)
+      .where(eq(tenantsTable.id, id))
+      .returning();
+    if (!deleted) {
+      res.status(404).json({ error: `Tenant with id ${id} not found` });
+      return;
+    }
+    res.status(204).send();
+  } catch (e) {
+    next(e as Error);
   }
-  const [deleted] = await db
-    .delete(tenantsTable)
-    .where(eq(tenantsTable.id, id))
-    .returning();
-  if (!deleted) {
-    res.status(404).json({ error: `Tenant with id ${id} not found` });
-    return;
-  }
-  res.status(204).send();
 });
 
 export default router;

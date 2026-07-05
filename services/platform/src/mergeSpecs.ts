@@ -10,6 +10,7 @@ const SERVICE_SPECS: { name: string; path: string }[] = [
   { name: "Property", path: "property/openapi.yaml" },
   { name: "Inventory", path: "inventory/openapi.yaml" },
   { name: "Price", path: "price/openapi.yaml" },
+  { name: "Search", path: "search/openapi.yaml" },
 ];
 
 const FALLBACK_SPECS_DEV: { name: string; path: string }[] = [
@@ -19,6 +20,7 @@ const FALLBACK_SPECS_DEV: { name: string; path: string }[] = [
   { name: "Property", path: "services/property/openapi.yaml" },
   { name: "Inventory", path: "services/inventory/openapi.yaml" },
   { name: "Price", path: "services/price/openapi.yaml" },
+  { name: "Search", path: "services/search/openapi.yaml" },
 ];
 
 type Obj = Record<string, unknown>;
@@ -90,7 +92,7 @@ export function buildMergedSpec(baseDir: string, useFallbackPaths = false): Obj 
   }
 
   // Fixed tag order so Swagger UI shows each service under its own section
-  const tagOrder = ["Listings", "Users", "Tenants", "Property", "Inventory", "Price"];
+  const tagOrder = ["Listings", "Users", "Tenants", "Property", "Inventory", "Price", "Search"];
   const orderedTags = tagOrder.map((name) => ({
     name,
     description: tags.find((t) => t.name === name)?.description ?? `${name} service`,
@@ -101,7 +103,7 @@ export function buildMergedSpec(baseDir: string, useFallbackPaths = false): Obj 
     info: {
       title: "Real Estate Platform API",
       description:
-        "Combined API for Listings, Users, Tenants, Property, Inventory, and Price services. Use the gateway server to call any endpoint from one origin.",
+        "Combined API for Listings, Users, Tenants, Property, Inventory, Price, and Search services. Use the gateway server to call any endpoint from one origin.",
       version: "1.0.0",
     },
     servers: [
@@ -112,6 +114,7 @@ export function buildMergedSpec(baseDir: string, useFallbackPaths = false): Obj 
       { url: "http://localhost:5004", description: "Property" },
       { url: "http://localhost:5005", description: "Inventory" },
       { url: "http://localhost:5006", description: "Price" },
+      { url: "http://localhost:5007", description: "Search" },
     ],
     tags: orderedTags,
     paths,

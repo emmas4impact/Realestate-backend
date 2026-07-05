@@ -37,7 +37,7 @@ Listings can only be created for **available** properties; price is taken from t
 ## Project layout
 
 ```
-├── docker-compose.yml   # postgres + all 7 services (+ optional Caddy)
+├── docker-compose.yml   # postgres + all 8 services (+ optional Caddy)
 ├── Caddyfile            # Optional gateway (profile: gateway)
 ├── .env.example
 ├── package.json         # Workspace root
@@ -81,9 +81,11 @@ Listings can only be created for **available** properties; price is taken from t
    - Users: <http://localhost:5002/users> — docs: <http://localhost:5002/api-docs>
    - Tenants: <http://localhost:5003/tenants> — docs: <http://localhost:5003/api-docs>
    - Property: <http://localhost:5004/properties> — docs: <http://localhost:5004/api-docs>
-   - Inventory: <http://localhost:5005/inventory> — docs: <http://localhost:5005/api-docs>
+   - Inventory: <http://localhost:5005/inventories> — docs: <http://localhost:5005/api-docs>
    - Price: <http://localhost:5006/prices> — docs: <http://localhost:5006/api-docs>
+   - Search: <http://localhost:5007/search> — docs: <http://localhost:5007/api-docs>
    - **Platform (combined Swagger):** <http://localhost:5010/>
+   - **Versions:** <http://localhost:5010/version>
 
 4. **Optional: API gateway (single port)**
 
@@ -91,7 +93,7 @@ Listings can only be created for **available** properties; price is taken from t
    docker compose --profile gateway up --build
    ```
 
-   Then: `/listings/*`, `/users/*`, `/tenants/*`, `/properties/*`, `/inventory/*`, `/prices/*` and `/platform/` (and `/swagger-ui/*` for platform assets) are proxied to the corresponding service. Combined docs at <http://localhost/platform/>.
+   Then: `/listings/*`, `/users/*`, `/tenants/*`, `/properties/*`, `/inventories/*`, `/prices/*`, `/search/*` and `/platform/` (and `/swagger-ui/*` for platform assets) are proxied to the corresponding service. Combined docs at <http://localhost/platform/>.
 
 ## Environment variables
 
@@ -99,9 +101,9 @@ See `.env.example`. Summary:
 
 - **Postgres:** `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT`
 - **URLs (host):** `DATABASE_URL` for local migrations/scripts
-- **Ports (optional):** `LISTINGS_PORT`, `USERS_PORT`, `TENANTS_PORT`, `PROPERTY_PORT`, `INVENTORY_PORT`, `PRICE_PORT`, `PLATFORM_PORT` (defaults: 5001–5006, 5010)
+- **Ports (optional):** `LISTINGS_PORT`, `USERS_PORT`, `TENANTS_PORT`, `PROPERTY_PORT`, `INVENTORY_PORT`, `PRICE_PORT`, `SEARCH_PORT`, `PLATFORM_PORT` (defaults: 5001–5007, 5010)
 - **Users auth:** `JWT_SECRET`, `REFRESH_JWT_SECRET`
-- **API key:** `BG_API_Key` (optional; when set, listings/tenants/property/inventory/price require header `bg-api-key`)
+- **API key:** `BG_API_Key` (optional; when set, listings/tenants/property/inventories/price require header `bg-api-key`)
 - **Optional:** `GEOCODER_API_KEY` (listings), `SENDGRID_API_KEY` (tenants), `NODE_ENV`, `SERVER_URL`
 
 ## Auth
@@ -114,6 +116,20 @@ See `.env.example`. Summary:
 - **Create listing:** Body must include `propertyId` (UUID) and `listingType` (`"rent"` or `"sales"`). Property must be **available**; price is fetched from the price service by type. Other fields (title, address, region, etc.) are filled from the property; you can override any of them.
 - **Unavailable property:** Creating or updating a listing for a property with `availability: false` returns **409** with message `"Property currently unavailable"`.
 - **Filter by type:** `GET /listings?listingType=rent` or `?listingType=sales`.
+
+## Search
+
+- **General search:** `GET /search?q=apa` returns grouped `properties`, `listings`, and `tenants`.
+- **Soft search:** default mode; uses a 3-letter buffer, so `?q=apa` can match `apartment`.
+- **Hard search:** `GET /search/properties?q=apartment&mode=hard` requires exact field/token matches.
+- **Availability:** `GET /search/availability?availability=true` returns property status plus `quantity`, `availableQuantity`, and tenant occupancy.
+- **Focused search:** `GET /search/properties`, `/search/listings`, `/search/tenants`, and `/search/status`.
+
+## Platform
+
+- **Combined docs:** `GET /` serves merged Swagger UI for all services.
+- **Merged OpenAPI:** `GET /openapi.json`.
+- **Versions:** `GET /version` returns release metadata plus all service image tags from env or `IMAGE_VERSION`. `npm run docker:build` writes a fresh funny two-word release name to `RELEASE_NAME`; Kubernetes can override with `NAMESPACE`, `RELEASE_NAME`, and `GPU_RELEASE`.
 
 ## Local development (without Docker)
 
@@ -130,11 +146,27 @@ See `.env.example`. Summary:
 
 ## Scripts (from repo root)
 
-- `npm run dev` – `docker compose up --build`
+- `npm run dev` – `docker compose --env-file .env --env-file IMAGE_VERSION up --build`
 - `npm run build` – build all workspaces
 - `npm run test` – run tests in all workspaces (run locally; not in Docker build)
 - `npm run db:up` – `docker compose up -d postgres`
 - `npm run db:migrate` – run migrations in all workspaces that define them
+- `npm run docker:build` – build Docker images only for services changed since `HEAD`; updates only those service tags in `IMAGE_VERSION`
+
+Docker image tags are tracked per service in `IMAGE_VERSION` (`TENANTS_IMAGE_TAG=1.0.4`, etc.). Use it with compose so unchanged services keep their previous stable image:
+
+```bash
+docker compose --env-file .env --env-file IMAGE_VERSION up -d
+```
+
+Useful build options:
+
+```bash
+DRY_RUN=true npm run docker:build
+SERVICES="tenants inventory" npm run docker:build
+BUILD_ALL=true npm run docker:build
+PUSH_IMAGES=true npm run docker:build
+```
 
 ## License
 

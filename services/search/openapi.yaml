@@ -1,0 +1,132 @@
+openapi: 3.0.3
+info:
+  title: Search Service API
+  version: 1.0.0
+  description: Aggregated search across properties, listings, inventory availability, and tenants.
+servers:
+  - url: http://localhost:5007
+tags:
+  - name: Search
+    description: Cross-service search and status
+paths:
+  /search:
+    get:
+      tags: [Search]
+      summary: General search across properties, listings, and tenants
+      parameters:
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/mode"
+      responses:
+        "200":
+          description: Grouped search result
+  /search/properties:
+    get:
+      tags: [Search]
+      summary: Search properties with inventory availability
+      parameters:
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/mode"
+        - $ref: "#/components/parameters/status"
+        - $ref: "#/components/parameters/availability"
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: region
+          in: query
+          schema: { type: string }
+        - name: district
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Paginated property results
+  /search/availability:
+    get:
+      tags: [Search]
+      summary: Search property availability and counts
+      parameters:
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/mode"
+        - $ref: "#/components/parameters/availability"
+      responses:
+        "200":
+          description: Paginated availability results
+  /search/listings:
+    get:
+      tags: [Search]
+      summary: Search listings
+      parameters:
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/mode"
+        - $ref: "#/components/parameters/status"
+        - $ref: "#/components/parameters/availability"
+        - name: listingType
+          in: query
+          schema:
+            type: string
+            enum: [rent, sales]
+        - name: tenantStatus
+          in: query
+          schema:
+            type: string
+            enum: [occupied, vacant]
+      responses:
+        "200":
+          description: Paginated listing results
+  /search/tenants:
+    get:
+      tags: [Search]
+      summary: Search tenants and linked listing status
+      parameters:
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/mode"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, listing_missing]
+      responses:
+        "200":
+          description: Paginated tenant results
+  /search/status:
+    get:
+      tags: [Search]
+      summary: Summarize property, listing, and tenant status
+      parameters:
+        - $ref: "#/components/parameters/q"
+        - $ref: "#/components/parameters/mode"
+      responses:
+        "200":
+          description: Status summary
+components:
+  parameters:
+    q:
+      name: q
+      in: query
+      description: Search text. Soft mode matches from a 3-letter buffer.
+      schema: { type: string }
+    mode:
+      name: mode
+      in: query
+      schema:
+        type: string
+        enum: [soft, hard]
+        default: soft
+    status:
+      name: status
+      in: query
+      schema: { type: string }
+    availability:
+      name: availability
+      in: query
+      schema: { type: boolean }
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: bg-api-key
+security:
+  - ApiKeyAuth: []

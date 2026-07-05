@@ -92,6 +92,19 @@ describe("Property routes", () => {
     }
   });
 
+  it("GET /properties?category returns 200 and filtered paginated shape", async () => {
+    mockState.selectList = [
+      { id: TEST_UUID, status: "Active", type: "residential", category: "apartment", region: "R", district: "D" },
+    ];
+    mockState.selectCount = 1;
+    const app = await getApp();
+    const res = await request(app).get("/properties?category=apartment");
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].category).toBe("apartment");
+    expect(res.body.meta.total).toBe(1);
+  });
+
   it("GET /properties/:id returns 400 for invalid UUID", async () => {
     const app = await getApp();
     const res = await request(app).get("/properties/not-a-uuid");

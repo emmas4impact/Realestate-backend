@@ -51,10 +51,12 @@ router.get("/", async (req: Request, res: Response) => {
   const district = req.query.district as string | undefined;
   const region = req.query.region as string | undefined;
   const type = req.query.type as string | undefined;
+  const category = req.query.category as string | undefined;
   const conditions = [];
   if (district) conditions.push(eq(propertiesTable.district, district));
   if (region) conditions.push(eq(propertiesTable.region, region));
   if (type) conditions.push(eq(propertiesTable.type, type));
+  if (category) conditions.push(eq(propertiesTable.category, category));
   const where = conditions.length ? and(...conditions) : undefined;
 
   const orderBy = desc(propertiesTable.createdAt);

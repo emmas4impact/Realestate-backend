@@ -10,7 +10,7 @@ function isValidUuid(value: string): boolean {
 
 const router = Router();
 
-// GET /inventory?propertyId=x - returns { data: [...] } for property (used by property service)
+// GET /inventories?propertyId=x - returns { data: [...] } for property (used by property service)
 router.get("/", async (req: Request, res: Response) => {
   const propertyId = req.query.propertyId as string | undefined;
   if (propertyId != null && propertyId !== "" && !isValidUuid(propertyId)) {
@@ -161,6 +161,33 @@ router.patch("/:id/decrement-available", async (req: Request, res: Response) => 
   }
   const current = (row as { availableQuantity: number }).availableQuantity ?? 0;
   const nextAvailable = Math.max(0, current - amount);
+  const [updated] = await db
+    .update(inventoryTable)
+    .set({ availableQuantity: nextAvailable, updatedAt: new Date() })
+    .where(eq(inventoryTable.id, id))
+    .returning();
+  res.json(updated);
+});
+
+router.patch("/:id/increment-available", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  if (!isValidUuid(id)) {
+    res.status(400).json({ error: "Invalid id: must be a valid UUID" });
+    return;
+  }
+  const amount = Math.max(1, Math.floor(Number((req.body as Record<string, unknown>).amount) || 1));
+  const [row] = await db
+    .select()
+    .from(inventoryTable)
+    .where(eq(inventoryTable.id, id))
+    .limit(1);
+  if (!row) {
+    res.status(404).json({ error: `Inventory item with id ${id} not found` });
+    return;
+  }
+  const current = (row as { availableQuantity: number }).availableQuantity ?? 0;
+  const quantity = (row as { quantity: number }).quantity ?? current;
+  const nextAvailable = Math.min(quantity, current + amount);
   const [updated] = await db
     .update(inventoryTable)
     .set({ availableQuantity: nextAvailable, updatedAt: new Date() })

@@ -19,8 +19,9 @@ COPY --from=builder /app/services/users/dist ./services/users/dist
 COPY --from=builder /app/services/users/package.json ./services/users/
 COPY --from=builder /app/services/users/src/openapi.yaml ./services/users/dist/
 COPY --from=builder /app/services/users/src/openapi.yaml ./services/users/
+COPY --from=builder /app/services/users/drizzle ./services/users/drizzle
 COPY --from=builder /app/package.json ./
 
 WORKDIR /app/services/users
 EXPOSE 5002
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "node dist/migrate.js && node dist/index.js"]

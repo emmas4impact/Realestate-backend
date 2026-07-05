@@ -15,11 +15,14 @@
   handle /properties* {
     reverse_proxy property-service:5004
   }
-  handle /inventory* {
+  handle /inventories* {
     reverse_proxy inventory-service:5005
   }
   handle /prices* {
     reverse_proxy price-service:5006
+  }
+  handle /search* {
+    reverse_proxy search-service:5007
   }
   handle /api-docs* {
     reverse_proxy listings-service:5001
