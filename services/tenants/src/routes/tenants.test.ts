@@ -160,6 +160,21 @@ describe("Tenants routes", () => {
     expect(res.body.name).toBe("John");
   });
 
+  it("POST /tenants returns 400 for Mongo-style listingId", async () => {
+    const app = await getApp();
+    const res = await request(app)
+      .post("/tenants")
+      .send({
+        name: "John",
+        surname: "Doe",
+        employer: "Corp",
+        phone: "+456",
+        email: "john@test.com",
+        listingId: "68dd8d6d8e0a6d2354547917",
+      });
+    expect(res.status).toBe(400);
+  });
+
   it("PUT /tenants/:id returns 404 when not found", async () => {
     mockState.updateReturn = [];
     const app = await getApp();
@@ -167,6 +182,14 @@ describe("Tenants routes", () => {
       .put(`/tenants/${TEST_UUID}`)
       .send({ name: "Updated" });
     expect(res.status).toBe(404);
+  });
+
+  it("PUT /tenants/:id returns 400 for Mongo-style listingId", async () => {
+    const app = await getApp();
+    const res = await request(app)
+      .put(`/tenants/${TEST_UUID}`)
+      .send({ listingId: "68dd8d6d8e0a6d2354547917" });
+    expect(res.status).toBe(400);
   });
 
   it("DELETE /tenants/:id returns 204 when deleted", async () => {

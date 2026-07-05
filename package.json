@@ -11,6 +11,7 @@
     "dev:tenants": "cd services/tenants && bun run dev",
     "dev:platform": "cd services/platform && npx tsx watch src/index.ts",
     "build": "npm run build --workspaces --if-present",
+    "docker:build": "sh scripts/build-images.sh",
     "test": "npm run test --workspaces --if-present",
     "db:up": "docker compose up -d postgres",
     "db:generate": "npm run db:generate --workspaces --if-present",
@@ -26,6 +27,6 @@
   "author": "Emmanuel Adedeji",
   "license": "ISC",
   "devDependencies": {
-    "drizzle-orm": "^0.29.3"
+    "drizzle-orm": "^0.45.2"
   }
 }

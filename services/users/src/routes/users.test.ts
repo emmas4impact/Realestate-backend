@@ -158,10 +158,22 @@ describe("Users routes", () => {
     expect(res.status).toBe(404);
   });
 
+  it("GET /users/:id returns 400 for Mongo-style id", async () => {
+    const app = await getApp();
+    const res = await request(app).get("/users/68dd8d6d8e0a6d2354547917").set("Authorization", "Bearer mock-access-token");
+    expect(res.status).toBe(400);
+  });
+
   it("PUT /users/:id returns 404 when not found", async () => {
     mockState.updateReturn = [];
     const app = await getApp();
     const res = await request(app).put(`/users/${TEST_UUID}`).set("Authorization", "Bearer mock-access-token").send({ name: "Updated" });
     expect(res.status).toBe(404);
+  });
+
+  it("PUT /users/:id returns 400 for Mongo-style id", async () => {
+    const app = await getApp();
+    const res = await request(app).put("/users/68dd8d6d8e0a6d2354547917").set("Authorization", "Bearer mock-access-token").send({ name: "Updated" });
+    expect(res.status).toBe(400);
   });
 });

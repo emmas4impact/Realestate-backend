@@ -125,6 +125,32 @@ describe("Property routes", () => {
     expect(res.body.availability).toBe(false);
   });
 
+  it("POST /properties returns 400 when required fields are missing", async () => {
+    const app = await getApp();
+    const res = await request(app).post("/properties").send({
+      category: "68dd8d6d8e0a6d2354547917",
+      bedrooms: 3,
+      bathrooms: 3,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain("type");
+    expect(res.body.error.message).toContain("region");
+    expect(res.body.error.message).toContain("district");
+  });
+
+  it("POST /properties returns 400 when numeric fields are invalid", async () => {
+    const app = await getApp();
+    const res = await request(app).post("/properties").send({
+      type: "residential",
+      category: "apartment",
+      region: "Lagos",
+      district: "Ikoyi",
+      bedrooms: "many",
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain("bedrooms");
+  });
+
   it("PUT /properties/:id returns 404 when not found", async () => {
     mockState.updateReturn = [];
     const app = await getApp();

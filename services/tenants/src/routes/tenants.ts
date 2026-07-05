@@ -80,6 +80,10 @@ router.get("/:id", async (req: Request, res: Response) => {
 router.post("/", async (req: Request, res: Response, next) => {
   try {
     const body = req.body as Record<string, string>;
+    if (!body.listingId || !isValidUuid(body.listingId)) {
+      res.status(400).json({ error: "listingId is required and must be a valid UUID" });
+      return;
+    }
     const [inserted] = await db
       .insert(tenantsTable)
       .values({
@@ -111,7 +115,13 @@ router.put("/:id", async (req: Request, res: Response, next) => {
     if (body.employer != null) updates.employer = body.employer;
     if (body.phone != null) updates.phone = body.phone;
     if (body.email != null) updates.email = body.email;
-    if (body.listingId != null) updates.listingId = body.listingId;
+    if (body.listingId != null) {
+      if (typeof body.listingId !== "string" || !isValidUuid(body.listingId)) {
+        res.status(400).json({ error: "listingId must be a valid UUID" });
+        return;
+      }
+      updates.listingId = body.listingId;
+    }
     const [updated] = await db
       .update(tenantsTable)
       .set(updates as Record<string, unknown>)

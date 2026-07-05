@@ -137,6 +137,12 @@ describe("Inventory routes", () => {
     expect(res.status).toBe(404);
   });
 
+  it("PUT /inventory/:id returns 400 for Mongo-style propertyId", async () => {
+    const app = await getApp();
+    const res = await request(app).put(`/inventory/${TEST_UUID}`).send({ propertyId: "68dd8d6d8e0a6d2354547917" });
+    expect(res.status).toBe(400);
+  });
+
   it("PATCH /inventory/:id/decrement-available returns 200 and updated item", async () => {
     const updated = { id: TEST_UUID, propertyId: PROP_UUID, quantity: 2, availableQuantity: 1, unitType: "unit", name: null, createdAt: new Date(), updatedAt: new Date() };
     mockState.selectOne = [{ availableQuantity: 2 }];

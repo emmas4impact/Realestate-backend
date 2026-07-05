@@ -115,7 +115,13 @@ router.put("/:id", async (req: Request, res: Response, next) => {
     }
     const body = req.body as Record<string, unknown>;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (body.propertyId != null) updates.propertyId = body.propertyId;
+    if (body.propertyId != null) {
+      if (typeof body.propertyId !== "string" || !isValidUuid(body.propertyId)) {
+        res.status(400).json({ error: "propertyId must be a valid UUID" });
+        return;
+      }
+      updates.propertyId = body.propertyId;
+    }
     if (body.amount != null) updates.amount = Number(body.amount);
     if (body.currency != null) updates.currency = body.currency;
     if (body.type != null) updates.type = body.type;

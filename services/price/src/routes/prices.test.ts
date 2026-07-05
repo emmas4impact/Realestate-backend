@@ -127,6 +127,12 @@ describe("Price routes", () => {
     expect(res.status).toBe(404);
   });
 
+  it("PUT /prices/:id returns 400 for Mongo-style propertyId", async () => {
+    const app = await getApp();
+    const res = await request(app).put(`/prices/${TEST_UUID}`).send({ propertyId: "68dd8d6d8e0a6d2354547917" });
+    expect(res.status).toBe(400);
+  });
+
   it("DELETE /prices/:id returns 204 when deleted", async () => {
     mockState.deleteReturn = [{ id: TEST_UUID }];
     const app = await getApp();

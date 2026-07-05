@@ -31,6 +31,7 @@ services:
 
   # Listings (Properties) API - RESO-aligned, OpenAPI; links to property + price
   listings-service:
+    image: ${IMAGE_REGISTRY:-realestate}/listings:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/listings/Dockerfile
@@ -64,6 +65,7 @@ services:
 
   # Users & Auth API - OAuth2/OIDC-ready, OpenAPI
   users-service:
+    image: ${IMAGE_REGISTRY:-realestate}/users:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/users/Dockerfile
@@ -90,6 +92,7 @@ services:
 
   # Tenants API - OpenAPI
   tenants-service:
+    image: ${IMAGE_REGISTRY:-realestate}/tenants:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/tenants/Dockerfile
@@ -118,6 +121,7 @@ services:
 
   # Property API - physical assets; GET /properties/:id returns inventory[] and prices[]
   property-service:
+    image: ${IMAGE_REGISTRY:-realestate}/property:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/property/Dockerfile
@@ -145,6 +149,7 @@ services:
 
   # Inventory API - quantity/units per property
   inventory-service:
+    image: ${IMAGE_REGISTRY:-realestate}/inventory:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/inventory/Dockerfile
@@ -170,6 +175,7 @@ services:
 
   # Price API - pricing records per property
   price-service:
+    image: ${IMAGE_REGISTRY:-realestate}/price:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/price/Dockerfile
@@ -195,6 +201,7 @@ services:
 
   # Centralized Swagger UI – combined OpenAPI for all services
   platform-service:
+    image: ${IMAGE_REGISTRY:-realestate}/platform:${IMAGE_TAG:-1.0.0}
     build:
       context: .
       dockerfile: services/platform/Dockerfile

@@ -116,7 +116,13 @@ router.put("/:id", async (req: Request, res: Response, next) => {
     }
     const body = req.body as Record<string, unknown>;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (body.propertyId != null) updates.propertyId = body.propertyId;
+    if (body.propertyId != null) {
+      if (typeof body.propertyId !== "string" || !isValidUuid(body.propertyId)) {
+        res.status(400).json({ error: "propertyId must be a valid UUID" });
+        return;
+      }
+      updates.propertyId = body.propertyId;
+    }
     if (body.quantity != null) updates.quantity = Number(body.quantity);
     if (body.availableQuantity != null) updates.availableQuantity = Math.max(0, Number(body.availableQuantity));
     if (body.available_quantity != null) updates.availableQuantity = Math.max(0, Number(body.available_quantity));
