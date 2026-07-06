@@ -1,19 +1,19 @@
-architecture: replication
+architecture: standalone
 
 auth:
   postgresPassword: "admin-postgres-password"
   username: "realestate"
-  password: "realestatepass"
+  password: "realestate_secret"
   database: "realestate"
 
 primary:
-  persistence:
-    enabled: true
-    storageClass: "linode-block-storage"
-    size: 8Gi
-
-readReplicas:
-  replicaCount: 2
+  resources:
+    requests:
+      cpu: 25m
+      memory: 128Mi
+    limits:
+      cpu: 100m
+      memory: 192Mi
   persistence:
     enabled: true
     storageClass: "linode-block-storage"

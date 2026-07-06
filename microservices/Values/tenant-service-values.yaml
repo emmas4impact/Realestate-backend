@@ -1,10 +1,16 @@
 appName: tenant
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/tenant-service
-appVersion: "1.0"
+appVersion: "1.0.7"
 appReplicas: 1
 containerPort: 5003
 containerEnvVars: 
 - name: PORT
   value: "5003"
+- name: NODE_ENV
+  value: "production"
+- name: LISTINGS_SERVICE_URL
+  value: "http://listings:5001"
+- name: INVENTORY_SERVICE_URL
+  value: "http://inventory:5005"
 
 servicePort: 5003

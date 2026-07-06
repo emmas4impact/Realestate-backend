@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { join, dirname } from "path";
@@ -35,10 +35,69 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const gatewayRoutes = [
+  { prefix: "/listings", target: process.env.LISTINGS_SERVICE_URL ?? "http://listings:5001" },
+  { prefix: "/users", target: process.env.USERS_SERVICE_URL ?? "http://users:5002" },
+  { prefix: "/tenants", target: process.env.TENANTS_SERVICE_URL ?? "http://tenant:5003" },
+  { prefix: "/properties", target: process.env.PROPERTY_SERVICE_URL ?? "http://property:5004" },
+  { prefix: "/inventories", target: process.env.INVENTORY_SERVICE_URL ?? "http://inventory:5005" },
+  { prefix: "/prices", target: process.env.PRICE_SERVICE_URL ?? "http://price:5006" },
+  { prefix: "/search", target: process.env.SEARCH_SERVICE_URL ?? "http://search:5007" },
+];
+
+function proxyHeaders(req: Request): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    const lower = key.toLowerCase();
+    if (["connection", "content-length", "host"].includes(lower) || value == null) continue;
+    headers[key] = Array.isArray(value) ? value.join(", ") : value;
+  }
+  return headers;
+}
+
+function buildProxyRequest(req: Request): RequestInit {
+  const init: RequestInit = {
+    method: req.method,
+    headers: proxyHeaders(req),
+  };
+
+  if (!["GET", "HEAD"].includes(req.method.toUpperCase()) && req.body !== undefined) {
+    init.body = JSON.stringify(req.body);
+    init.headers = { ...init.headers, "content-type": "application/json" };
+  }
+
+  return init;
+}
+
+function copyResponseHeaders(upstream: globalThis.Response, res: Response) {
+  upstream.headers.forEach((value, key) => {
+    if (["content-encoding", "content-length", "transfer-encoding"].includes(key.toLowerCase())) return;
+    res.setHeader(key, value);
+  });
+}
+
+function createGatewayProxy(target: string) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const upstreamUrl = new URL(req.originalUrl, target);
+      const upstream = await fetch(upstreamUrl, buildProxyRequest(req));
+      copyResponseHeaders(upstream, res);
+      res.status(upstream.status);
+      const body = Buffer.from(await upstream.arrayBuffer());
+      res.send(body);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
 // Specific routes first so they are not handled by Swagger UI static
 app.get("/openapi.json", (_req, res) => res.json(mergedSpec));
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 app.get("/version", (_req, res) => res.json(buildVersionResponse()));
+for (const route of gatewayRoutes) {
+  app.use(route.prefix, createGatewayProxy(route.target));
+}
 // Mount Swagger UI static assets (swagger-ui-bundle.js, swagger-ui.css, etc.) so the UI page can load
 app.use(swaggerUi.serve);
 app.get("/", swaggerUi.setup(mergedSpec, { explorer: true }));

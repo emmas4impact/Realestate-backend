@@ -11,8 +11,8 @@ containerEnvVars:
 - name: ENV_VAR_TWO
   value: "valuetwo"
 
-cpuRequest: 50m
-cpuLimits: 200m
+cpuRequest: 10m
+cpuLimits: 100m
 memoryRequest: 64Mi
 memoryLimits: 128Mi
 

@@ -1,11 +1,13 @@
 appName: listings
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/listing-service
-appVersion: "1.0"
+appVersion: "1.0.5"
 appReplicas: 1
 containerPort: 5001
 containerEnvVars: 
 - name: PORT
   value: "5001"
+- name: NODE_ENV
+  value: "production"
 - name: PROPERTY_SERVICE_URL
   value: "http://property:5004"
 - name: PRICE_SERVICE_URL

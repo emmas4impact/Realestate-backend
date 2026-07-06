@@ -215,6 +215,13 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: 5010
+      LISTINGS_SERVICE_URL: http://listings-service:5001
+      USERS_SERVICE_URL: http://users-service:5002
+      TENANTS_SERVICE_URL: http://tenants-service:5003
+      PROPERTY_SERVICE_URL: http://property-service:5004
+      INVENTORY_SERVICE_URL: http://inventory-service:5005
+      PRICE_SERVICE_URL: http://price-service:5006
+      SEARCH_SERVICE_URL: http://search-service:5007
       RELEASE_NAME: ${RELEASE_NAME:-}
       NAMESPACE: ${NAMESPACE:-local}
       GPU_RELEASE: ${GPU_RELEASE:-}
