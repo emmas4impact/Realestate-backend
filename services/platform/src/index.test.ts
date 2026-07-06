@@ -117,4 +117,39 @@ describe("Platform API docs", () => {
     expect(res.body.services[0]).toHaveProperty("service");
     expect(res.body.services[0]).toHaveProperty("version");
   });
+
+  it("proxies service routes through the platform gateway", async () => {
+    const fetchMock = vi.fn(async (input: URL | RequestInfo, init?: RequestInit) => {
+      const headers = init?.headers as Record<string, string>;
+      return new Response(
+        JSON.stringify({
+          upstreamUrl: String(input),
+          method: init?.method,
+          body: init?.body,
+          apiKey: headers["bg-api-key"],
+        }),
+        { status: 202, headers: { "content-type": "application/json" } }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    try {
+      const mod = await import("./index.js");
+      const app = (mod as { default: import("express").Express }).default;
+      const res = await request(app)
+        .post("/properties?status=Active")
+        .set("bg-api-key", "test-key")
+        .send({ address: "1 Gateway Road" });
+
+      expect(res.status).toBe(202);
+      expect(res.body).toEqual({
+        upstreamUrl: "http://property:5004/properties?status=Active",
+        method: "POST",
+        body: JSON.stringify({ address: "1 Gateway Road" }),
+        apiKey: "test-key",
+      });
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

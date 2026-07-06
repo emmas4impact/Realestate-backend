@@ -16,12 +16,14 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/user-services:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/user-services:1.0.7
         ports:
         - containerPort: 5002
         env:
         - name: PORT
           value: "5002"
+        - name: NODE_ENV
+          value: "production"
         envFrom:
         - secretRef:
             name: app-secrets
@@ -65,12 +67,14 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/listing-service:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/listing-service:1.0.5
         ports:
         - containerPort: 5001
         env:
         - name: PORT
           value: "5001"
+        - name: NODE_ENV
+          value: "production"
         - name: PROPERTY_SERVICE_URL
           value: "http://property:5004"
         - name: PRICE_SERVICE_URL
@@ -118,12 +122,14 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/property-service:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/property-service:1.0.7
         ports:
         - containerPort: 5004
         env:
         - name: PORT
           value: "5004"
+        - name: NODE_ENV
+          value: "production"
         - name: INVENTORY_SERVICE_URL
           value: "http://inventory:5005"
         - name: PRICE_SERVICE_URL
@@ -171,12 +177,18 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/tenant-service:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/tenant-service:1.0.7
         ports:
         - containerPort: 5003
         env:
         - name: PORT
           value: "5003"
+        - name: NODE_ENV
+          value: "production"
+        - name: LISTINGS_SERVICE_URL
+          value: "http://listings:5001"
+        - name: INVENTORY_SERVICE_URL
+          value: "http://inventory:5005"
         envFrom:
         - secretRef:
             name: app-secrets
@@ -220,12 +232,14 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/inventory-service:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/inventory-service:1.0.7
         ports:
         - containerPort: 5005
         env:
         - name: PORT
           value: "5005"
+        - name: NODE_ENV
+          value: "production"
         envFrom:
         - secretRef:
             name: app-secrets
@@ -269,12 +283,14 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/price-service:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/price-service:1.0.5
         ports:
         - containerPort: 5006
         env:
         - name: "PORT"
           value: "5006"
+        - name: NODE_ENV
+          value: "production"
         envFrom:
         - secretRef:
             name: app-secrets
@@ -303,6 +319,57 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: search
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: search
+  template:
+    metadata:
+      labels:
+        app: search
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: service
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/search-service:1.0.2
+        ports:
+        - containerPort: 5007
+        env:
+        - name: PORT
+          value: "5007"
+        - name: NODE_ENV
+          value: "production"
+        envFrom:
+        - secretRef:
+            name: app-secrets
+        resources:
+          requests: 
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search
+spec:
+  type: ClusterIP
+  selector:
+    app: search
+  ports:
+  - protocol: TCP
+    port: 5007
+    targetPort: 5007
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: platform
 spec:
   replicas: 1
@@ -318,12 +385,41 @@ spec:
       - name: ecr-secret
       containers:
       - name: service
-        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service:1.0
+        image: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service:1.0.5
         ports:
         - containerPort: 5010
         env:
         - name: PORT
           value: "5010"
+        - name: NODE_ENV
+          value: "production"
+        - name: RELEASE_NAME
+          value: "embarrassed painting"
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: GPU_RELEASE
+          value: "COTOPAXI"
+        - name: LISTINGS_IMAGE_TAG
+          value: "1.0.5"
+        - name: USERS_IMAGE_TAG
+          value: "1.0.7"
+        - name: TENANTS_IMAGE_TAG
+          value: "1.0.7"
+        - name: PROPERTY_IMAGE_TAG
+          value: "1.0.7"
+        - name: INVENTORY_IMAGE_TAG
+          value: "1.0.7"
+        - name: PRICE_IMAGE_TAG
+          value: "1.0.5"
+        - name: PLATFORM_IMAGE_TAG
+          value: "1.0.5"
+        - name: SEARCH_IMAGE_TAG
+          value: "1.0.2"
+        envFrom:
+        - secretRef:
+            name: app-secrets
         resources:
           requests: 
             cpu: 50m

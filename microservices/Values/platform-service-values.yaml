@@ -1,11 +1,51 @@
 appName: platform
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service
-appVersion: "1.0"
+appVersion: "1.0.6"
 appReplicas: 1
 containerPort: 5010
 containerEnvVars: 
 - name: PORT
   value: "5010"
+- name: NODE_ENV
+  value: "production"
+- name: LISTINGS_SERVICE_URL
+  value: "http://listings:5001"
+- name: USERS_SERVICE_URL
+  value: "http://users:5002"
+- name: TENANTS_SERVICE_URL
+  value: "http://tenant:5003"
+- name: PROPERTY_SERVICE_URL
+  value: "http://property:5004"
+- name: INVENTORY_SERVICE_URL
+  value: "http://inventory:5005"
+- name: PRICE_SERVICE_URL
+  value: "http://price:5006"
+- name: SEARCH_SERVICE_URL
+  value: "http://search:5007"
+- name: RELEASE_NAME
+  value: "embarrassed painting"
+- name: NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
+- name: GPU_RELEASE
+  value: ""
+- name: LISTINGS_IMAGE_TAG
+  value: "1.0.5"
+- name: USERS_IMAGE_TAG
+  value: "1.0.7"
+- name: TENANTS_IMAGE_TAG
+  value: "1.0.7"
+- name: PROPERTY_IMAGE_TAG
+  value: "1.0.7"
+- name: INVENTORY_IMAGE_TAG
+  value: "1.0.7"
+- name: PRICE_IMAGE_TAG
+  value: "1.0.5"
+- name: PLATFORM_IMAGE_TAG
+  value: "1.0.6"
+- name: SEARCH_IMAGE_TAG
+  value: "1.0.2"
 
 serviceType: LoadBalancer
 servicePort: 5010
