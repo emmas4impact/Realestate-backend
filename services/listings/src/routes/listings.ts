@@ -94,6 +94,10 @@ router.get("/districts/:district", async (req: Request, res: Response) => {
 });
 
 router.get("/:id", async (req: Request, res: Response) => {
+  if (!isValidUuid(req.params.id)) {
+    res.status(400).json({ error: "Invalid id: must be a valid UUID" });
+    return;
+  }
   const [row] = await db
     .select()
     .from(listingsTable)
@@ -183,6 +187,10 @@ router.post("/", async (req: Request, res: Response, next) => {
 
 router.put("/:id", async (req: Request, res: Response, next) => {
   try {
+    if (!isValidUuid(req.params.id)) {
+      res.status(400).json({ error: "Invalid id: must be a valid UUID" });
+      return;
+    }
     const body = req.body as Record<string, unknown>;
     const [current] = await db.select().from(listingsTable).where(eq(listingsTable.id, req.params.id)).limit(1);
     if (!current) {
@@ -257,6 +265,10 @@ router.put("/:id", async (req: Request, res: Response, next) => {
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
+  if (!isValidUuid(req.params.id)) {
+    res.status(400).json({ error: "Invalid id: must be a valid UUID" });
+    return;
+  }
   const [deleted] = await db
     .delete(listingsTable)
     .where(eq(listingsTable.id, req.params.id))

@@ -108,6 +108,12 @@ describe("Listings routes", () => {
     expect(res.status).toBe(404);
   });
 
+  it("GET /listings/:id returns 400 for Mongo-style id", async () => {
+    const app = await getApp();
+    const res = await request(app).get("/listings/68dd8d6d8e0a6d2354547917").set("bg-api-key", "test-key");
+    expect(res.status).toBe(400);
+  });
+
   it("GET /listings/:id returns 200 and listing when found", async () => {
     const listing = {
       id: "550e8400-e29b-41d4-a716-446655440000",
@@ -327,11 +333,26 @@ describe("Listings routes", () => {
     expect(res.status).toBe(404);
   });
 
+  it("PUT /listings/:id returns 400 for Mongo-style id", async () => {
+    const app = await getApp();
+    const res = await request(app)
+      .put("/listings/68dd8d6d8e0a6d2354547917")
+      .set("bg-api-key", "test-key")
+      .send({ title: "Updated" });
+    expect(res.status).toBe(400);
+  });
+
   it("DELETE /listings/:id returns 404 when not found", async () => {
     mockState.deleteReturn = [];
     const app = await getApp();
     const res = await request(app).delete("/listings/550e8400-e29b-41d4-a716-446655440000").set("bg-api-key", "test-key");
     expect(res.status).toBe(404);
+  });
+
+  it("DELETE /listings/:id returns 400 for Mongo-style id", async () => {
+    const app = await getApp();
+    const res = await request(app).delete("/listings/68dd8d6d8e0a6d2354547917").set("bg-api-key", "test-key");
+    expect(res.status).toBe(400);
   });
 
   it("DELETE /listings/:id returns 204 when deleted", async () => {

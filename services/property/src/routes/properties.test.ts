@@ -92,6 +92,19 @@ describe("Property routes", () => {
     }
   });
 
+  it("GET /properties?category returns 200 and filtered paginated shape", async () => {
+    mockState.selectList = [
+      { id: TEST_UUID, status: "Active", type: "residential", category: "apartment", region: "R", district: "D" },
+    ];
+    mockState.selectCount = 1;
+    const app = await getApp();
+    const res = await request(app).get("/properties?category=apartment");
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].category).toBe("apartment");
+    expect(res.body.meta.total).toBe(1);
+  });
+
   it("GET /properties/:id returns 400 for invalid UUID", async () => {
     const app = await getApp();
     const res = await request(app).get("/properties/not-a-uuid");
@@ -123,6 +136,32 @@ describe("Property routes", () => {
     const res = await request(app).post("/properties").send({ type: "residential", category: "apartment", region: "R", district: "D" });
     expect(res.status).toBe(201);
     expect(res.body.availability).toBe(false);
+  });
+
+  it("POST /properties returns 400 when required fields are missing", async () => {
+    const app = await getApp();
+    const res = await request(app).post("/properties").send({
+      category: "68dd8d6d8e0a6d2354547917",
+      bedrooms: 3,
+      bathrooms: 3,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain("type");
+    expect(res.body.error.message).toContain("region");
+    expect(res.body.error.message).toContain("district");
+  });
+
+  it("POST /properties returns 400 when numeric fields are invalid", async () => {
+    const app = await getApp();
+    const res = await request(app).post("/properties").send({
+      type: "residential",
+      category: "apartment",
+      region: "Lagos",
+      district: "Ikoyi",
+      bedrooms: "many",
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toContain("bedrooms");
   });
 
   it("PUT /properties/:id returns 404 when not found", async () => {

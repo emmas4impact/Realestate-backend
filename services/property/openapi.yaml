@@ -27,6 +27,9 @@ paths:
         - name: type
           in: query
           schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
       responses:
         '200':
           description: Paginated properties
