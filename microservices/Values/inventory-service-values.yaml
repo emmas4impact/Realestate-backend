@@ -1,6 +1,6 @@
 appName: inventory
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/inventory-service
-appVersion: "1.0.7"
+appVersion: "1.0.9"
 appReplicas: 1
 containerPort: 5005
 containerEnvVars: 

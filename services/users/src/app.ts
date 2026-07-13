@@ -5,6 +5,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import YAML from "yaml";
 import swaggerUi from "swagger-ui-express";
+import { createHealthHandler, createRequestLogger } from "@realestate/shared";
 import { errorHandler } from "./middleware/errorHandler.js";
 import usersRouter from "./routes/users.js";
 
@@ -20,9 +21,11 @@ try {
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(createRequestLogger("users"));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
+app.get("/health", createHealthHandler("users"));
 
 app.use("/users", usersRouter);
 

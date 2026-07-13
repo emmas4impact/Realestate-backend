@@ -1,6 +1,6 @@
 appName: platform
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service
-appVersion: "1.0.6"
+appVersion: "1.0.8"
 appReplicas: 1
 containerPort: 5010
 containerEnvVars: 
@@ -23,29 +23,29 @@ containerEnvVars:
 - name: SEARCH_SERVICE_URL
   value: "http://search:5007"
 - name: RELEASE_NAME
-  value: "embarrassed painting"
+  value: "fizzy postcard"
 - name: NAMESPACE
   valueFrom:
     fieldRef:
       fieldPath: metadata.namespace
 - name: GPU_RELEASE
-  value: ""
+  value: "COTOPAXI"
 - name: LISTINGS_IMAGE_TAG
-  value: "1.0.5"
+  value: "1.0.7"
 - name: USERS_IMAGE_TAG
-  value: "1.0.7"
+  value: "1.0.9"
 - name: TENANTS_IMAGE_TAG
-  value: "1.0.7"
+  value: "1.0.9"
 - name: PROPERTY_IMAGE_TAG
-  value: "1.0.7"
+  value: "1.0.9"
 - name: INVENTORY_IMAGE_TAG
-  value: "1.0.7"
+  value: "1.0.9"
 - name: PRICE_IMAGE_TAG
-  value: "1.0.5"
+  value: "1.0.7"
 - name: PLATFORM_IMAGE_TAG
-  value: "1.0.6"
+  value: "1.0.8"
 - name: SEARCH_IMAGE_TAG
-  value: "1.0.2"
+  value: "1.0.4"
 
 serviceType: LoadBalancer
 servicePort: 5010
