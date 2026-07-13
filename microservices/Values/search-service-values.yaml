@@ -1,0 +1,12 @@
+appName: search
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/search-service
+appVersion: "1.0.4"
+appReplicas: 1
+containerPort: 5007
+containerEnvVars:
+- name: PORT
+  value: "5007"
+- name: NODE_ENV
+  value: "production"
+
+servicePort: 5007

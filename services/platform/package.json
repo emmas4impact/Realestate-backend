@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@realestate/shared": "file:../../packages/shared",
     "cors": "^2.8.5",
     "drizzle-orm": "0.45.2",
     "express": "^4.19.2",

@@ -1,10 +1,12 @@
 appName: users
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/user-services
-appVersion: "1.0"
+appVersion: "1.0.9"
 appReplicas: 1
 containerPort: 5002
 containerEnvVars: 
 - name: PORT
   value: "5002"
+- name: NODE_ENV
+  value: "production"
 
 servicePort: 5002

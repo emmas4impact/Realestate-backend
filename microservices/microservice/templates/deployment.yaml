@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         app: {{ .Values.appName }}
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       imagePullSecrets:
       - name: {{ .Values.imageSecrets }}
@@ -22,7 +26,12 @@ spec:
         env:
         {{- range .Values.containerEnvVars}}
         - name: {{ .name }}
+          {{- if hasKey . "valueFrom" }}
+          valueFrom:
+            {{- toYaml .valueFrom | nindent 12 }}
+          {{- else }}
           value: {{ .value | quote }}
+          {{- end }}
         {{- end}}
         envFrom:
         - secretRef:
