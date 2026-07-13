@@ -3,6 +3,7 @@ import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { createRequestLogger, logger } from "@realestate/shared";
 import { buildMergedSpec } from "./mergeSpecs.js";
 import { buildVersionResponse } from "./version.js";
 
@@ -21,7 +22,7 @@ try {
   try {
     mergedSpec = buildMergedSpec(repoRoot, true);
   } catch (e2) {
-    console.error("Failed to build merged OpenAPI spec:", e2);
+    logger.error("Failed to build merged OpenAPI spec", e2, { service: "platform" });
     mergedSpec = {
       openapi: "3.0.3",
       info: { title: "Real Estate Platform API", version: "1.0.0" },
@@ -34,6 +35,7 @@ try {
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(createRequestLogger("platform"));
 
 const gatewayRoutes = [
   { prefix: "/listings", target: process.env.LISTINGS_SERVICE_URL ?? "http://listings:5001" },
@@ -93,7 +95,10 @@ function createGatewayProxy(target: string) {
 
 // Specific routes first so they are not handled by Swagger UI static
 app.get("/openapi.json", (_req, res) => res.json(mergedSpec));
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/health", (_req, res) => {
+  logger.info("Health check", { service: "platform", status: "ok" });
+  res.json({ status: "ok", service: "platform" });
+});
 app.get("/version", (_req, res) => res.json(buildVersionResponse()));
 for (const route of gatewayRoutes) {
   app.use(route.prefix, createGatewayProxy(route.target));
@@ -105,7 +110,7 @@ app.get("/", swaggerUi.setup(mergedSpec, { explorer: true }));
 const port = Number(process.env.PORT) || 5010;
 if (!process.env.VITEST) {
   app.listen(port, () => {
-    console.log(`Platform API docs at http://localhost:${port}`);
+    logger.info("Service started", { service: "platform", port });
   });
 }
 export default app;
