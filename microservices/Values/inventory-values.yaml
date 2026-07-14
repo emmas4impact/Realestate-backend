@@ -1,0 +1,15 @@
+appName: inventory
+appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/inventory-service
+appVersion: "1.0.9.1"
+
+appReplicas: 2
+
+containerPort: 5005
+servicePort: 5005
+serviceType: ClusterIP
+
+containerEnvVars:
+  - name: PORT
+    value: "5005"
+  - name: NODE_ENV
+    value: "production"

@@ -1,7 +1,7 @@
 appName: platform
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/platform-service
-appVersion: "1.0.8"
-appReplicas: 1
+appVersion: "1.0.8.1"
+appReplicas: 2
 containerPort: 5010
 containerEnvVars: 
 - name: PORT
@@ -31,21 +31,21 @@ containerEnvVars:
 - name: GPU_RELEASE
   value: "COTOPAXI"
 - name: LISTINGS_IMAGE_TAG
-  value: "1.0.7"
+  value: "1.0.7.1"
 - name: USERS_IMAGE_TAG
-  value: "1.0.9"
+  value: "1.0.9.1"
 - name: TENANTS_IMAGE_TAG
-  value: "1.0.9"
+  value: "1.0.9.1"
 - name: PROPERTY_IMAGE_TAG
-  value: "1.0.9"
+  value: "1.0.9.1"
 - name: INVENTORY_IMAGE_TAG
-  value: "1.0.9"
+  value: "1.0.9.1"
 - name: PRICE_IMAGE_TAG
-  value: "1.0.7"
+  value: "1.0.7.1"
 - name: PLATFORM_IMAGE_TAG
-  value: "1.0.8"
+  value: "1.0.8.1"
 - name: SEARCH_IMAGE_TAG
-  value: "1.0.4"
+  value: "1.0.4.1"
 
 serviceType: LoadBalancer
 servicePort: 5010
