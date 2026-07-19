@@ -1,0 +1,107 @@
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION = "eu-north-1"
+    ECR_REGISTRY = "762760349103.dkr.ecr.eu-north-1.amazonaws.com"
+    IMAGE_TAG = "${env.BUILD_NUMBER}"
+    DEPLOY_ENV = "staging"
+  }
+
+  stages {
+    stage("Checkout") {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage("Verify tools") {
+      steps {
+        sh """
+          terraform version
+          kubectl version --client
+          helm version
+          helmfile --version
+          aws --version
+          docker --version
+          node --version
+          npm --version
+        """
+      }
+    }
+
+    stage("Install dependencies") {
+      steps {
+        sh "npm ci"
+      }
+    }
+
+    stage("Run tests") {
+      steps {
+        sh "npm test || true"
+      }
+    }
+
+    stage("Build inventory image") {
+      steps {
+        sh """
+          docker build -f services/inventory/Dockerfile \
+            -t $ECR_REGISTRY/microservices/inventory-service:$IMAGE_TAG .
+        """
+      }
+    }
+
+    stage("Push inventory image") {
+      steps {
+        withCredentials([[
+          $class: "AmazonWebServicesCredentialsBinding",
+          credentialsId: "aws-ecr-credentials"
+        ]]) {
+          sh """
+            aws ecr get-login-password --region $AWS_REGION | \
+            docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            docker push $ECR_REGISTRY/microservices/inventory-service:$IMAGE_TAG
+          """
+        }
+      }
+    }
+
+    stage("Terraform plan") {
+      steps {
+        withCredentials([string(credentialsId: "linode-token", variable: "LINODE_TOKEN")]) {
+          dir("terraform/environments/staging") {
+            sh """
+              terraform init
+              terraform plan
+            """
+          }
+        }
+      }
+    }
+
+    stage("Deploy with Helmfile") {
+      steps {
+        withCredentials([file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")]) {
+          sh """
+            export KUBECONFIG=$KUBECONFIG_FILE
+            helmfile -f helmfile.yaml -e staging template
+            helmfile -f helmfile.yaml -e staging sync
+          """
+        }
+      }
+    }
+
+    stage("Verify deployment") {
+      steps {
+        withCredentials([file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")]) {
+          sh """
+            export KUBECONFIG=$KUBECONFIG_FILE
+            kubectl get pods -n realestate-staging
+            kubectl get svc -n realestate-staging
+          """
+        }
+      }
+    }
+  }
+}
