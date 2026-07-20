@@ -36,9 +36,15 @@ pipeline {
       }
     }
 
+    stage("Build shared package") {
+      steps {
+        sh "npm run build -w @realestate/shared"
+      }
+    }
+
     stage("Run tests") {
       steps {
-        sh "npm test || true"
+        sh "npm test"
       }
     }
 
