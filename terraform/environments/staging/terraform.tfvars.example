@@ -1,0 +1,15 @@
+environment   = "staging"
+region        = "gb-lon"
+cluster_label = "realestate-staging-lke"
+k8s_version   = "1.32"
+
+node_type  = "g6-standard-2"
+node_count = 2
+
+domain_name        = "yourdomain.com"
+soa_email          = "admin@yourdomain.com"
+platform_public_ip = ""
+
+postgres_allow_list = [
+  "YOUR_PUBLIC_IP/32"
+]

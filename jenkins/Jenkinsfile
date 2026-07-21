@@ -18,7 +18,7 @@ pipeline {
     stage("Verify tools") {
       steps {
         sh """
-          terraform version
+              terraform version
           kubectl version --client
           helm version
           helmfile --version
@@ -84,14 +84,19 @@ pipeline {
 
     stage("Terraform plan") {
       steps {
-        withCredentials([string(credentialsId: "linode-token", variable: "LINODE_TOKEN")]) {
+        withCredentials([
+          string(credentialsId: "linode-token", variable: "LINODE_TOKEN")
+        ]) {
           dir("terraform/environments/staging") {
             sh """
-              terraform init
-              terraform plan
+              terraform init -input=false
+              terraform fmt -check
+              terraform validate
+              terraform plan -input=false \
+                -var="linode_token=$LINODE_TOKEN"
             """
           }
-        }
+        } 
       }
     }
 
