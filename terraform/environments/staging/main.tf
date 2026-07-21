@@ -53,10 +53,10 @@ resource "linode_lke_cluster" "realestate" {
 }
 
 resource "linode_database_postgresql_v2" "postgres" {
-  label       = "realestate-${var.environment}-postgres"
-  engine_id   = "postgresql/16"
-  region      = var.region
-  type        = "g6-nanode-1"
+  label        = "realestate-${var.environment}-postgres"
+  engine_id    = "postgresql/16"
+  region       = var.region
+  type         = "g6-nanode-1"
   cluster_size = 1
 
   allow_list = var.postgres_allow_list
