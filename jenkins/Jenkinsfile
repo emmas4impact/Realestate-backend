@@ -102,11 +102,15 @@ pipeline {
     stage("Deploy with Helmfile") {
       steps {
         withCredentials([file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")]) {
-          sh """
+          dir("microservices") {
+          sh '''
+            set +x
+            test -f helmfile.yaml
             export KUBECONFIG=$KUBECONFIG_FILE
             helmfile -f helmfile.yaml -e staging template
             helmfile -f helmfile.yaml -e staging sync
-          """
+          '''
+          }
         }
       }
     }
@@ -114,11 +118,11 @@ pipeline {
     stage("Verify deployment") {
       steps {
         withCredentials([file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")]) {
-          sh """
+          sh '''
             export KUBECONFIG=$KUBECONFIG_FILE
             kubectl get pods -n realestate-staging
             kubectl get svc -n realestate-staging
-          """
+          '''
         }
       }
     }
