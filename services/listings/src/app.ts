@@ -11,13 +11,17 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import listingsRouter from "./routes/listings.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const candidates = [
   join(__dirname, "openapi.yaml"),
   join(__dirname, "..", "src", "openapi.yaml"),
   join(__dirname, "..", "openapi.yaml"),
 ];
+
 const openapiPath = candidates.find((p) => existsSync(p)) ?? candidates[0];
+
 let openapiDoc: Record<string, unknown>;
+
 try {
   openapiDoc = YAML.parse(readFileSync(openapiPath, "utf-8"));
 } catch (e) {
@@ -25,16 +29,35 @@ try {
 }
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(createRequestLogger("listings"));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
+
+/**
+ * Health endpoints
+ * These must stay before apiKeyAuth so Kubernetes can call them without authentication.
+ */
 app.get("/health", createHealthHandler("listings"));
 
+app.get("/health/live", (_req, res) => {
+  res.status(200).json({
+    status: "alive",
+    service: "listings",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/health/ready", createHealthHandler("listings"));
+
 app.use(apiKeyAuth);
+
 app.use("/listings", listingsRouter);
 
 app.use(errorHandler);
+
 export default app;

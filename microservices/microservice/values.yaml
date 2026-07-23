@@ -2,14 +2,17 @@ appName: servicename
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/servicename
 appVersion: "1.0"
 appReplicas: 1
+
 secretName: app-secrets
 imageSecrets: ecr-secret
+
 containerPort: 5002
+
 containerEnvVars:
-- name: ENV_VAR_ONE
-  value: "valueone"
-- name: ENV_VAR_TWO
-  value: "valuetwo"
+  - name: ENV_VAR_ONE
+    value: "valueone"
+  - name: ENV_VAR_TWO
+    value: "valuetwo"
 
 cpuRequest: 10m
 cpuLimits: 100m
@@ -18,3 +21,29 @@ memoryLimits: 128Mi
 
 servicePort: 5002
 serviceType: ClusterIP
+
+probes:
+  enabled: true
+  port: null
+
+  startup:
+    enabled: true
+    path: /health/live
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+
+  liveness:
+    path: /health/live
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3

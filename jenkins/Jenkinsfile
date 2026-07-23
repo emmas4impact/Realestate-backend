@@ -2,10 +2,16 @@ pipeline {
   agent any
 
   environment {
-    AWS_REGION = "eu-north-1"
+    AWS_REGION   = "eu-north-1"
     ECR_REGISTRY = "762760349103.dkr.ecr.eu-north-1.amazonaws.com"
-    IMAGE_TAG = "${env.BUILD_NUMBER}"
-    DEPLOY_ENV = "staging"
+    IMAGE_TAG    = "${env.BUILD_NUMBER}"
+
+    DEPLOY_ENV   = "staging"
+    K8S_NAMESPACE = "realestate-staging"
+
+    TERRAFORM_DIR = "terraform/environments/staging"
+    HELMFILE_DIR  = "microservices"
+    HELMFILE_NAME = "helmfile.yaml"
   }
 
   stages {
@@ -17,8 +23,8 @@ pipeline {
 
     stage("Verify tools") {
       steps {
-        sh """
-              terraform version
+        sh '''
+          terraform version
           kubectl version --client
           helm version
           helmfile --version
@@ -26,38 +32,35 @@ pipeline {
           docker --version
           node --version
           npm --version
-        """
+        '''
       }
     }
 
     stage("Install dependencies") {
       steps {
-        sh "npm ci"
+        sh '''
+          npm ci
+        '''
       }
     }
 
     stage("Build shared package") {
       steps {
-        sh "npm run build -w @realestate/shared"
+        sh '''
+          npm run build -w @realestate/shared
+        '''
       }
     }
 
     stage("Run tests") {
       steps {
-        sh "npm test"
+        sh '''
+          npm test
+        '''
       }
     }
 
-    stage("Build inventory image") {
-      steps {
-        sh """
-          docker build -f services/inventory/Dockerfile \
-            -t $ECR_REGISTRY/microservices/inventory-service:$IMAGE_TAG .
-        """
-      }
-    }
-
-    stage("Push inventory image") {
+    stage("Build and push all service images") {
       steps {
         withCredentials([
           usernamePassword(
@@ -66,17 +69,56 @@ pipeline {
             passwordVariable: "AWS_SECRET_ACCESS_KEY"
           )
         ]) {
-          sh '''
-            set +x
-            export AWS_DEFAULT_REGION=$AWS_REGION
+          script {
+            def services = [
+              [name: "users",     path: "services/users",     repo: "microservices/user-services"],
+              [name: "listings",  path: "services/listings",  repo: "microservices/listing-service"],
+              [name: "tenants",   path: "services/tenants",   repo: "microservices/tenant-service"],
+              [name: "property",  path: "services/property",  repo: "microservices/property-service"],
+              [name: "inventory", path: "services/inventory", repo: "microservices/inventory-service"],
+              [name: "price",     path: "services/price",     repo: "microservices/price-service"],
+              [name: "platform",  path: "services/platform",  repo: "microservices/platform-service"],
+              [name: "search",    path: "services/search",    repo: "microservices/search-service"]
+            ]
 
-            aws sts get-caller-identity
+            sh '''
+              set +x
+              export AWS_DEFAULT_REGION="$AWS_REGION"
 
-            aws ecr get-login-password --region $AWS_REGION | \
-            docker login --username AWS --password-stdin $ECR_REGISTRY
+              echo "Logging in to ECR..."
+              aws ecr get-login-password --region "$AWS_REGION" | \
+                docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            '''
 
-            docker push $ECR_REGISTRY/microservices/inventory-service:$IMAGE_TAG
-          '''
+            services.each { svc ->
+              withEnv([
+                "SERVICE_NAME=${svc.name}",
+                "SERVICE_PATH=${svc.path}",
+                "ECR_REPO=${svc.repo}"
+              ]) {
+                sh '''
+                  set -e
+
+                  echo "----------------------------------------"
+                  echo "Building service: $SERVICE_NAME"
+                  echo "Path: $SERVICE_PATH"
+                  echo "Repository: $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
+                  echo "----------------------------------------"
+
+                  test -f "$SERVICE_PATH/Dockerfile"
+
+                  docker build \
+                    -f "$SERVICE_PATH/Dockerfile" \
+                    -t "$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG" \
+                    .
+
+                  echo "Pushing service: $SERVICE_NAME"
+
+                  docker push "$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
+                '''
+              }
+            }
+          }
         }
       }
     }
@@ -86,30 +128,76 @@ pipeline {
         withCredentials([
           string(credentialsId: "linode-token", variable: "LINODE_TOKEN")
         ]) {
-          dir("terraform/environments/staging") {
+          dir("${TERRAFORM_DIR}") {
             sh '''
               set +x
+
               terraform init -input=false
               terraform fmt -check
               terraform validate
-              terraform plan -input=false 
+              terraform plan -input=false
             '''
           }
-        } 
+        }
+      }
+    }
+
+    stage("Refresh ECR pull secret") {
+      steps {
+        withCredentials([
+          usernamePassword(
+            credentialsId: "aws-ecr-credentials",
+            usernameVariable: "AWS_ACCESS_KEY_ID",
+            passwordVariable: "AWS_SECRET_ACCESS_KEY"
+          ),
+          file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")
+        ]) {
+          sh '''
+            set +x
+
+            export KUBECONFIG="$KUBECONFIG_FILE"
+            export AWS_DEFAULT_REGION="$AWS_REGION"
+
+            echo "Ensuring namespace exists..."
+            kubectl create namespace "$K8S_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+            echo "Refreshing ECR image pull secret..."
+            kubectl delete secret ecr-secret -n "$K8S_NAMESPACE" --ignore-not-found
+
+            kubectl create secret docker-registry ecr-secret \
+              --docker-server="$ECR_REGISTRY" \
+              --docker-username=AWS \
+              --docker-password="$(aws ecr get-login-password --region "$AWS_REGION")" \
+              -n "$K8S_NAMESPACE"
+          '''
+        }
       }
     }
 
     stage("Deploy with Helmfile") {
       steps {
-        withCredentials([file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")]) {
-          dir("microservices") {
-          sh '''
-            set +x
-            test -f helmfile.yaml
-            export KUBECONFIG=$KUBECONFIG_FILE
-            helmfile -f helmfile.yaml -e staging template
-            helmfile -f helmfile.yaml -e staging sync
-          '''
+        withCredentials([
+          file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")
+        ]) {
+          dir("${HELMFILE_DIR}") {
+            sh '''
+              set +x
+
+              export KUBECONFIG="$KUBECONFIG_FILE"
+              export IMAGE_TAG="$IMAGE_TAG"
+
+              echo "Current directory:"
+              pwd
+
+              echo "Checking Helmfile:"
+              test -f "$HELMFILE_NAME"
+
+              echo "Rendering Helmfile..."
+              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" template
+
+              echo "Deploying Helmfile..."
+              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" sync
+            '''
           }
         }
       }
@@ -117,14 +205,36 @@ pipeline {
 
     stage("Verify deployment") {
       steps {
-        withCredentials([file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")]) {
+        withCredentials([
+          file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")
+        ]) {
           sh '''
-            export KUBECONFIG=$KUBECONFIG_FILE
-            kubectl get pods -n realestate-staging
-            kubectl get svc -n realestate-staging
+            set +x
+
+            export KUBECONFIG="$KUBECONFIG_FILE"
+
+            echo "Pods:"
+            kubectl get pods -n "$K8S_NAMESPACE"
+
+            echo "Services:"
+            kubectl get svc -n "$K8S_NAMESPACE"
+
+            echo "Deployments and images:"
+            kubectl get deploy -n "$K8S_NAMESPACE" \
+              -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[*].image
           '''
         }
       }
+    }
+  }
+
+  post {
+    success {
+      echo "Pipeline completed successfully."
+    }
+
+    failure {
+      echo "Pipeline failed. Check the failed stage above."
     }
   }
 }
