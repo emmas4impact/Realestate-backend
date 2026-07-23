@@ -1,6 +1,6 @@
 appName: users
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/user-services
-appVersion: '{{ requiredEnv "IMAGE_TAG" }}'
+appVersion: "1.0.9.1"
 appReplicas: 2
 containerPort: 5002
 containerEnvVars: 

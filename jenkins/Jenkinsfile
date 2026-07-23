@@ -11,7 +11,7 @@ pipeline {
 
     TERRAFORM_DIR = "terraform/environments/staging"
     HELMFILE_DIR  = "microservices"
-    HELMFILE_NAME = "helmfile.yaml"
+    HELMFILE_NAME = "helmfile.yaml.gotmpl"
   }
 
   stages {

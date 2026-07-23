@@ -1,6 +1,6 @@
 appName: property
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/property-service
-appVersion: '{{ requiredEnv "IMAGE_TAG" }}'
+appVersion: "1.0.9.1"
 appReplicas: 2
 containerPort: 5004
 containerEnvVars: 

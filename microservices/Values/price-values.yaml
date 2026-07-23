@@ -1,6 +1,6 @@
 appName: price
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/price-service
-appVersion: '{{ requiredEnv "IMAGE_TAG" }}'
+appVersion: "1.0.7.1"
 appReplicas: 2
 containerPort: 5006
 containerEnvVars: 
