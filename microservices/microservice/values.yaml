@@ -4,8 +4,7 @@ appVersion: "1.0"
 appReplicas: 1
 
 secretName: app-secrets
-imageSecrets:
-  - name: ecr-secret 
+imageSecrets: ecr-secret
 
 containerPort: 5002
 

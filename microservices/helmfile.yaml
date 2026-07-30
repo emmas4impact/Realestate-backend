@@ -32,11 +32,6 @@ releases:
     chart: ./microservice
     values:
       - Values/inventory-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: listingservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -45,11 +40,6 @@ releases:
     chart: ./microservice
     values:
       - Values/listing-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: platformservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -58,11 +48,6 @@ releases:
     chart: ./microservice
     values:
       - Values/platform-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: priceservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -71,11 +56,6 @@ releases:
     chart: ./microservice
     values:
       - Values/price-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: searchservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -84,11 +64,6 @@ releases:
     chart: ./microservice
     values:
       - Values/search-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: propertyservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -97,11 +72,6 @@ releases:
     chart: ./microservice
     values:
       - Values/property-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: tenantservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -110,11 +80,6 @@ releases:
     chart: ./microservice
     values:
       - Values/tenant-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}
 
   - name: userservice
     namespace: '{{ .Values | get "namespace" "realestate-development" }}'
@@ -123,8 +88,3 @@ releases:
     chart: ./microservice
     values:
       - Values/users-values.yaml
-{{ if env "IMAGE_TAG" }}
-    set:
-      - name: appVersion
-        value: {{ env "IMAGE_TAG" | quote }}
-{{ end }}

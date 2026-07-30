@@ -11,7 +11,7 @@ pipeline {
 
     TERRAFORM_DIR = "terraform/environments/staging"
     HELMFILE_DIR  = "microservices"
-    HELMFILE_NAME = "helmfile.yaml.gotmpl"
+    HELMFILE_NAME = "helmfile.yaml"
   }
 
   stages {
@@ -193,10 +193,12 @@ pipeline {
               test -f "$HELMFILE_NAME"
 
               echo "Rendering Helmfile..."
-              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" template
+              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" template \
+              --args "--set-string appVersion=$IMAGE_TAG"
 
               echo "Deploying Helmfile..."
-              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" sync
+              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" sync \
+              --args "--set-string appVersion=$IMAGE_TAG"
             '''
           }
         }

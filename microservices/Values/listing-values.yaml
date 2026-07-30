@@ -1,6 +1,6 @@
 appName: listings
 appImage: 762760349103.dkr.ecr.eu-north-1.amazonaws.com/microservices/listing-service
-appVersion: "1.0.7.1"
+appVersion: "1.0.7"
 appReplicas: 1
 containerPort: 5001
 containerEnvVars: 
