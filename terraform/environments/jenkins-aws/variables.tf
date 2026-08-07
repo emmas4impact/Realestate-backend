@@ -21,11 +21,15 @@ variable "subnet_id" {
   type = string
 }
 
-variable "allowed_admin_cidr" {
-  type        = string
-  description = "151.225.202.209/32"
+variable "allowed_ssh_cidrs" {
+  description = "CIDR blocks allowed to SSH into Jenkins EC2 instances"
+  type        = list(string)
 }
 
+variable "allowed_jenkins_ui_cidrs" {
+  description = "CIDR blocks allowed to access Jenkins UI on port 8080"
+  type        = list(string)
+}
 variable "ssh_public_key_path" {
   type    = string
   default = "~/.ssh/id_rsa.pub"

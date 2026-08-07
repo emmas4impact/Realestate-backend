@@ -41,7 +41,7 @@ resource "aws_security_group" "jenkins_master" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = var.allowed_ssh_cidrs
   }
 
   tags = merge(local.common_tags, {
@@ -79,7 +79,7 @@ resource "aws_security_group_rule" "master_ssh_from_admin" {
   from_port   = 22
   to_port     = 22
   protocol    = "tcp"
-  cidr_blocks = [var.allowed_admin_cidr]
+  cidr_blocks = var.allowed_ssh_cidrs
 }
 
 resource "aws_security_group_rule" "master_ui_from_admin" {
@@ -90,7 +90,7 @@ resource "aws_security_group_rule" "master_ui_from_admin" {
   from_port   = 8080
   to_port     = 8080
   protocol    = "tcp"
-  cidr_blocks = [var.allowed_admin_cidr]
+  cidr_blocks = var.allowed_jenkins_ui_cidrs
 }
 
 resource "aws_security_group_rule" "master_agent_port_from_agent" {
@@ -127,7 +127,7 @@ resource "aws_security_group_rule" "agent_ssh_from_admin" {
   from_port   = 22
   to_port     = 22
   protocol    = "tcp"
-  cidr_blocks = [var.allowed_admin_cidr]
+  cidr_blocks = var.allowed_ssh_cidrs
 }
 
 # -----------------------------------------------------------------------------
