@@ -12,7 +12,9 @@ import tenantsRouter from "./routes/tenants.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openapiPath = join(__dirname, "openapi.yaml");
+
 let openapiDoc: Record<string, unknown>;
+
 try {
   openapiDoc = YAML.parse(readFileSync(openapiPath, "utf-8"));
 } catch {
@@ -20,16 +22,35 @@ try {
 }
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(createRequestLogger("tenants"));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
+
+/**
+ * Health endpoints
+ * These must stay before apiKeyAuth so Kubernetes can call them without authentication.
+ */
 app.get("/health", createHealthHandler("tenants"));
 
+app.get("/health/live", (_req, res) => {
+  res.status(200).json({
+    status: "alive",
+    service: "tenants",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/health/ready", createHealthHandler("tenants"));
+
 app.use(apiKeyAuth);
+
 app.use("/tenants", tenantsRouter);
 
 app.use(errorHandler);
+
 export default app;

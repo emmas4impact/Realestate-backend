@@ -1,10 +1,11 @@
 environments:
   development:
     values:
-      - namespace: development
+      - namespace: realestate-development
+
   staging:
     values:
-      - namespace: staging
+      - namespace: realestate-staging
 
 ---
 
@@ -15,76 +16,75 @@ repositories:
 helmDefaults:
   wait: false
   timeout: 1200
+  createNamespace: true
 
 releases:
   - name: postgres
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     chart: bitnami/postgresql
     values:
       - helm-postgre.yaml
 
   - name: inventoryservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/inventory-service-values.yaml
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/inventory-values.yaml
 
   - name: listingservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/listing-service-values.yaml
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/listing-values.yaml
 
   - name: platformservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/platform-service-values.yaml
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/platform-values.yaml
 
   - name: priceservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/price-service-values.yaml
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/price-values.yaml
 
   - name: searchservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
     values:
-      - Values/search-service-values.yaml
+      - Values/search-values.yaml
 
   - name: propertyservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/property-service-values.yaml
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/property-values.yaml
 
   - name: tenantservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/tenant-service-values.yaml
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/tenant-values.yaml
 
   - name: userservice
-    namespace: '{{ .Values.namespace | default "development" }}'
+    namespace: '{{ .Values | get "namespace" "realestate-development" }}'
     needs:
-      - postgres
-    chart: microservice
-    values: 
-      - Values/users-service-values.yaml
-
-  
+      - '{{ .Values | get "namespace" "realestate-development" }}/postgres'
+    chart: ./microservice
+    values:
+      - Values/users-values.yaml

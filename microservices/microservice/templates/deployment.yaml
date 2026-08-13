@@ -18,13 +18,16 @@ spec:
     spec:
       imagePullSecrets:
       - name: {{ .Values.imageSecrets }}
+
       containers:
       - name: {{ .Values.appName }}
         image: "{{ .Values.appImage }}:{{ .Values.appVersion }}"
+
         ports:
-        - containerPort: {{ .Values.containerPort}}
+        - containerPort: {{ .Values.containerPort }}
+
         env:
-        {{- range .Values.containerEnvVars}}
+        {{- range .Values.containerEnvVars }}
         - name: {{ .name }}
           {{- if hasKey . "valueFrom" }}
           valueFrom:
@@ -32,15 +35,47 @@ spec:
           {{- else }}
           value: {{ .value | quote }}
           {{- end }}
-        {{- end}}
+        {{- end }}
+
         envFrom:
         - secretRef:
             name: {{ .Values.secretName }}
+
+        {{- if .Values.probes.startup.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probes.startup.path | quote }}
+            port: {{ .Values.probes.port | default .Values.containerPort }}
+          initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+        {{- end }}
+
+        {{- if .Values.probes.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probes.liveness.path | quote }}
+            port: {{ .Values.probes.port | default .Values.containerPort }}
+          initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probes.readiness.path | quote }}
+            port: {{ .Values.probes.port | default .Values.containerPort }}
+          initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+        {{- end }}
+
         resources:
-          requests: 
+          requests:
             cpu: {{ .Values.cpuRequest }}
             memory: {{ .Values.memoryRequest }}
           limits:
             cpu: {{ .Values.cpuLimits }}
-            memory: {{ .Values.memoryLimits}}
-       
+            memory: {{ .Values.memoryLimits }}

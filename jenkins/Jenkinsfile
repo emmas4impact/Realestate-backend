@@ -1,0 +1,365 @@
+def services() {
+  return [
+    [name: "users",     path: "services/users",     repo: "microservices/user-services"],
+    [name: "listings",  path: "services/listings",  repo: "microservices/listing-service"],
+    [name: "tenants",   path: "services/tenants",   repo: "microservices/tenant-service"],
+    [name: "property",  path: "services/property",  repo: "microservices/property-service"],
+    [name: "inventory", path: "services/inventory", repo: "microservices/inventory-service"],
+    [name: "price",     path: "services/price",     repo: "microservices/price-service"],
+    [name: "platform",  path: "services/platform",  repo: "microservices/platform-service"],
+    [name: "search",    path: "services/search",    repo: "microservices/search-service"]
+  ]
+}
+
+def deployBranches() {
+  return [
+    "feature/jenkins-terraform-cicd",
+    "main",
+    "master",
+    "staging"
+  ]
+}
+
+def isDeployBranch() {
+  return deployBranches().contains(env.BRANCH_NAME)
+}
+
+pipeline {
+  agent {
+    label "docker-agent && aws-agent"
+  }
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+    skipDefaultCheckout(true)
+  }
+
+  environment {
+    AWS_REGION    = "eu-north-1"
+    ECR_REGISTRY  = "762760349103.dkr.ecr.eu-north-1.amazonaws.com"
+
+    DEPLOY_ENV    = "staging"
+    K8S_NAMESPACE = "realestate-staging"
+
+    TERRAFORM_DIR = "terraform/environments/staging"
+    HELMFILE_DIR  = "microservices"
+    HELMFILE_NAME = "helmfile.yaml"
+
+    WORKING_BRANCH = "feature/jenkins-terraform-cicd"
+  }
+
+  stages {
+    stage("Checkout") {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage("Prepare build metadata") {
+      steps {
+        script {
+          def sourceBranch = env.CHANGE_BRANCH ?: env.BRANCH_NAME ?: "manual"
+          def safeBranch = sourceBranch.replaceAll("[^A-Za-z0-9_.-]", "-")
+
+          if (env.CHANGE_ID) {
+            env.IMAGE_TAG = "pr-${env.CHANGE_ID}-${env.BUILD_NUMBER}"
+          } else {
+            env.IMAGE_TAG = "${safeBranch}-${env.BUILD_NUMBER}"
+          }
+
+          echo "BRANCH_NAME: ${env.BRANCH_NAME}"
+          echo "CHANGE_ID: ${env.CHANGE_ID ?: 'not-a-pr'}"
+          echo "CHANGE_BRANCH: ${env.CHANGE_BRANCH ?: 'not-a-pr'}"
+          echo "CHANGE_TARGET: ${env.CHANGE_TARGET ?: 'not-a-pr'}"
+          echo "IMAGE_TAG: ${env.IMAGE_TAG}"
+          echo "Deploy branches: ${deployBranches().join(', ')}"
+        }
+      }
+    }
+
+    stage("Verify tools") {
+      steps {
+        sh '''
+          set -e
+
+          terraform version
+          kubectl version --client
+          helm version
+          helmfile --version
+          aws --version
+          docker --version
+          node --version
+          npm --version
+          java -version
+        '''
+      }
+    }
+
+    stage("Install dependencies") {
+      steps {
+        sh '''
+          set -e
+          npm ci
+        '''
+      }
+    }
+
+    stage("Build shared package") {
+      steps {
+        sh '''
+          set -e
+          npm run build -w @realestate/shared
+        '''
+      }
+    }
+
+    stage("Run tests") {
+      steps {
+        sh '''
+          set -e
+          npm test
+        '''
+      }
+    }
+
+    stage("Docker build validation for PR") {
+      when {
+        changeRequest()
+      }
+
+      steps {
+        script {
+          services().each { svc ->
+            withEnv([
+              "SERVICE_NAME=${svc.name}",
+              "SERVICE_PATH=${svc.path}",
+              "ECR_REPO=${svc.repo}"
+            ]) {
+              sh '''
+                set -e
+
+                echo "----------------------------------------"
+                echo "PR Docker build validation"
+                echo "Service: $SERVICE_NAME"
+                echo "Path: $SERVICE_PATH"
+                echo "Image: $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
+                echo "This PR stage builds only. It does not push."
+                echo "----------------------------------------"
+
+                test -f "$SERVICE_PATH/Dockerfile"
+
+                docker build \
+                  -f "$SERVICE_PATH/Dockerfile" \
+                  -t "$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG" \
+                  .
+              '''
+            }
+          }
+        }
+      }
+    }
+
+    stage("Build and push all service images") {
+      when {
+        expression {
+          return isDeployBranch()
+        }
+      }
+
+      steps {
+        withCredentials([
+          usernamePassword(
+            credentialsId: "aws-ecr-credentials",
+            usernameVariable: "AWS_ACCESS_KEY_ID",
+            passwordVariable: "AWS_SECRET_ACCESS_KEY"
+          )
+        ]) {
+          script {
+            sh '''
+              set +x
+              export AWS_DEFAULT_REGION="$AWS_REGION"
+
+              echo "Logging in to ECR..."
+              aws ecr get-login-password --region "$AWS_REGION" | \
+                docker login --username AWS --password-stdin "$ECR_REGISTRY"
+            '''
+
+            services().each { svc ->
+              withEnv([
+                "SERVICE_NAME=${svc.name}",
+                "SERVICE_PATH=${svc.path}",
+                "ECR_REPO=${svc.repo}"
+              ]) {
+                sh '''
+                  set -e
+
+                  echo "----------------------------------------"
+                  echo "Building and pushing service: $SERVICE_NAME"
+                  echo "Path: $SERVICE_PATH"
+                  echo "Image: $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
+                  echo "----------------------------------------"
+
+                  test -f "$SERVICE_PATH/Dockerfile"
+
+                  docker build \
+                    -f "$SERVICE_PATH/Dockerfile" \
+                    -t "$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG" \
+                    .
+
+                  docker push "$ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG"
+                '''
+              }
+            }
+          }
+        }
+      }
+    }
+
+    stage("Terraform plan") {
+      when {
+        expression {
+          return isDeployBranch()
+        }
+      }
+
+      steps {
+        withCredentials([
+          string(credentialsId: "linode-token", variable: "LINODE_TOKEN")
+        ]) {
+          dir("${TERRAFORM_DIR}") {
+            sh '''
+              set +x
+
+              terraform init -input=false
+              terraform fmt -check
+              terraform validate
+              terraform plan -input=false
+            '''
+          }
+        }
+      }
+    }
+
+    stage("Refresh ECR pull secret") {
+      when {
+        expression {
+          return isDeployBranch()
+        }
+      }
+
+      steps {
+        withCredentials([
+          usernamePassword(
+            credentialsId: "aws-ecr-credentials",
+            usernameVariable: "AWS_ACCESS_KEY_ID",
+            passwordVariable: "AWS_SECRET_ACCESS_KEY"
+          ),
+          file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")
+        ]) {
+          sh '''
+            set +x
+
+            export KUBECONFIG="$KUBECONFIG_FILE"
+            export AWS_DEFAULT_REGION="$AWS_REGION"
+
+            echo "Ensuring namespace exists..."
+            kubectl create namespace "$K8S_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+            echo "Refreshing ECR image pull secret..."
+            kubectl delete secret ecr-secret -n "$K8S_NAMESPACE" --ignore-not-found
+
+            kubectl create secret docker-registry ecr-secret \
+              --docker-server="$ECR_REGISTRY" \
+              --docker-username=AWS \
+              --docker-password="$(aws ecr get-login-password --region "$AWS_REGION")" \
+              -n "$K8S_NAMESPACE"
+
+            kubectl patch serviceaccount default -n "$K8S_NAMESPACE" \
+              -p '{"imagePullSecrets":[{"name":"ecr-secret"}]}'
+          '''
+        }
+      }
+    }
+
+    stage("Deploy with Helmfile") {
+      when {
+        expression {
+          return isDeployBranch()
+        }
+      }
+
+      steps {
+        withCredentials([
+          file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")
+        ]) {
+          dir("${HELMFILE_DIR}") {
+            sh '''
+              set +x
+
+              export KUBECONFIG="$KUBECONFIG_FILE"
+
+              echo "Current directory:"
+              pwd
+
+              echo "Checking Helmfile:"
+              test -f "$HELMFILE_NAME"
+
+              echo "Rendering Helmfile with image tag: $IMAGE_TAG"
+              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" template \
+                --args "--set-string appVersion=$IMAGE_TAG"
+
+              echo "Deploying Helmfile with image tag: $IMAGE_TAG"
+              helmfile -f "$HELMFILE_NAME" -e "$DEPLOY_ENV" sync \
+                --args "--set-string appVersion=$IMAGE_TAG"
+            '''
+          }
+        }
+      }
+    }
+
+    stage("Verify deployment") {
+      when {
+        expression {
+          return isDeployBranch()
+        }
+      }
+
+      steps {
+        withCredentials([
+          file(credentialsId: "kubeconfig-realestate-staging", variable: "KUBECONFIG_FILE")
+        ]) {
+          sh '''
+            set +x
+
+            export KUBECONFIG="$KUBECONFIG_FILE"
+
+            echo "Pods:"
+            kubectl get pods -n "$K8S_NAMESPACE"
+
+            echo "Services:"
+            kubectl get svc -n "$K8S_NAMESPACE"
+
+            echo "Deployments and images:"
+            kubectl get deploy -n "$K8S_NAMESPACE" \
+              -o custom-columns=NAME:.metadata.name,IMAGE:.spec.template.spec.containers[*].image
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "Pipeline completed successfully."
+      echo "Branch: ${env.BRANCH_NAME}"
+      echo "Image tag: ${env.IMAGE_TAG}"
+    }
+
+    failure {
+      echo "Pipeline failed. Check the failed stage above."
+      echo "Branch: ${env.BRANCH_NAME}"
+      echo "Image tag: ${env.IMAGE_TAG}"
+    }
+  }
+}

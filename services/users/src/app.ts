@@ -11,7 +11,9 @@ import usersRouter from "./routes/users.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openapiPath = join(__dirname, "openapi.yaml");
+
 let openapiDoc: Record<string, unknown>;
+
 try {
   openapiDoc = YAML.parse(readFileSync(openapiPath, "utf-8"));
 } catch {
@@ -19,15 +21,33 @@ try {
 }
 
 const app = express();
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(createRequestLogger("users"));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
+
+/**
+ * Health endpoints
+ * Kubernetes uses these for startup, liveness, and readiness checks.
+ */
 app.get("/health", createHealthHandler("users"));
+
+app.get("/health/live", (_req, res) => {
+  res.status(200).json({
+    status: "alive",
+    service: "users",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/health/ready", createHealthHandler("users"));
 
 app.use("/users", usersRouter);
 
 app.use(errorHandler);
+
 export default app;

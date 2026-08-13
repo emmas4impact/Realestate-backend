@@ -12,7 +12,9 @@ import pricesRouter from "./routes/prices.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const openapiPath = join(__dirname, "openapi.yaml");
+
 let openapiDoc: Record<string, unknown>;
+
 try {
   openapiDoc = YAML.parse(readFileSync(openapiPath, "utf-8"));
 } catch {
@@ -20,16 +22,35 @@ try {
 }
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 app.use(createRequestLogger("price"));
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 app.get("/openapi.json", (_req, res) => res.json(openapiDoc));
+
+/**
+ * Health endpoints
+ * These must stay before apiKeyAuth so Kubernetes can call them without authentication.
+ */
 app.get("/health", createHealthHandler("price"));
 
+app.get("/health/live", (_req, res) => {
+  res.status(200).json({
+    status: "alive",
+    service: "price",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/health/ready", createHealthHandler("price"));
+
 app.use(apiKeyAuth);
+
 app.use("/prices", pricesRouter);
 
 app.use(errorHandler);
+
 export default app;
